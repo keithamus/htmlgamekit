@@ -1,0 +1,30 @@
+---
+layout: demo
+title: Leaderboard Demo
+permalink: /demos/leaderboard/
+style: |
+  :root { --game-accent: #6ee7b7; }
+---
+<game-shell id="game" rounds="3" between-delay="300"
+            score-url="https://scores.htmlgamekit.dev"
+            game-id="demo-leaderboard">
+  <div when-some-scene="intro" data-overlay>
+    <h1>Leaderboard Demo</h1>
+    <p>Play 3 rounds, then see the leaderboard.</p>
+    <button commandfor="game" command="--start" autofocus>Start</button>
+  </div>
+
+  <game-timer when-some-scene="playing between paused" duration="5"></game-timer>
+
+  <div when-some-scene="playing between paused">
+    <demo-target></demo-target>
+  </div>
+
+  <div when-some-scene="result" data-overlay>
+    <h1>Done!</h1>
+    <game-result-stat label="Score"></game-result-stat>
+    <game-leaderboard best="5" worst="3"></game-leaderboard>
+    <button commandfor="game" command="--restart" autofocus>Again</button>
+  </div>
+</game-shell>
+<script type="module" src="{{ site.baseurl }}/demos/demo-init.js"></script>

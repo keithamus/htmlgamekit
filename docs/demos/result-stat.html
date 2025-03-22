@@ -1,0 +1,40 @@
+---
+layout: demo
+title: Result Stat Demo
+permalink: /demos/result-stat/
+style: |
+  :root {
+    --game-result-gradient-from: #fbbf24;
+    --game-result-gradient-to: #ef4444;
+  }
+---
+<game-shell id="game" rounds="5" between-delay="300">
+  <div when-some-scene="intro" data-overlay>
+    <h1>Result Stat Demo</h1>
+    <p>Play 5 rounds, then see the animated score reveal.</p>
+    <button commandfor="game" command="--start" autofocus>Start</button>
+  </div>
+
+  <game-timer when-some-scene="playing between paused" duration="5"></game-timer>
+
+  <div when-some-scene="playing between paused">
+    <demo-target></demo-target>
+  </div>
+
+  <div when-some-scene="result" data-overlay>
+    <h1>Results</h1>
+
+    <game-result-stat label="Score" animate="800"
+      score-low="0" score-mid="3" score-high="4" score-perfect="5">
+    </game-result-stat>
+
+    <game-result-message>
+      <option when-max-score="2">Better luck next time.</option>
+      <option when-min-score="3" when-max-score="4">Not bad!</option>
+      <option when-min-score="5">Perfect score!</option>
+    </game-result-message>
+
+    <button commandfor="game" command="--restart" autofocus>Again</button>
+  </div>
+</game-shell>
+<script type="module" src="{{ site.baseurl }}/demos/demo-init.js"></script>

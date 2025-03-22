@@ -1,0 +1,45 @@
+---
+layout: demo
+title: Toast Demo
+permalink: /demos/toast/
+style: |
+  :root { --game-accent: #fbbf24; }
+---
+<game-shell id="game" rounds="5" between-delay="600">
+  <div when-some-scene="intro" data-overlay>
+    <h1>Toast Demo</h1>
+    <p>Click the dot. Watch the toast messages.</p>
+    <button commandfor="game" command="--start" autofocus>Start</button>
+  </div>
+
+  <game-timer when-some-scene="playing between paused" duration="5"></game-timer>
+
+  <game-toast when-some-scene="playing between paused" trigger="pass">
+    <option>Nice!</option>
+    <option>Got it!</option>
+    <option>Sharp!</option>
+    <option>Boom!</option>
+  </game-toast>
+  <game-toast when-some-scene="playing between paused" trigger="fail">
+    <option>Missed!</option>
+    <option>Nope!</option>
+    <option>Too slow!</option>
+  </game-toast>
+  <game-toast when-some-scene="playing between paused" trigger="start">Go!</game-toast>
+  <game-toast when-some-scene="playing between paused" persist trigger="round" position="bottom" when-min-round="2">
+    <option>Keep going...</option>
+    <option>Another one!</option>
+    <option>Focus...</option>
+  </game-toast>
+
+  <div when-some-scene="playing between paused">
+    <demo-target></demo-target>
+  </div>
+
+  <div when-some-scene="result" data-overlay>
+    <h1>Done!</h1>
+    <game-result-stat label="Score"></game-result-stat>
+    <button commandfor="game" command="--restart" autofocus>Again</button>
+  </div>
+</game-shell>
+<script type="module" src="{{ site.baseurl }}/demos/demo-init.js"></script>

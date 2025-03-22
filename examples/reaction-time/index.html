@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reaction Time - HTMLGameKit Example</title>
+    <script type="importmap">{"imports":{"signal-polyfill":"../../node_modules/signal-polyfill/dist/index.js"}}</script>
+    <link rel="stylesheet" href="../../src/game-base.css" />
+    <style>
+      reaction-game {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        inset: 0;
+        cursor: pointer;
+        font-size: clamp(20px, 3vw, 32px);
+        font-family: system-ui, -apple-system, sans-serif;
+        color: var(--game-text, #eee);
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <game-shell id="game" game-id="reaction-time" storage-key="reaction-time"
+                rounds="5" score-order="asc" between-delay="800">
+
+      <game-difficulty-progression type="fixed"
+        params='{"delay":{"start":2000,"end":4000}}'
+        rounds="5">
+      </game-difficulty-progression>
+
+      <div when-some-scene="intro" data-overlay>
+        <h1>Reaction Time</h1>
+        <p>Wait for the screen to turn green, then click as fast as you can.
+          5 rounds. Don't jump the gun -- clicking too early resets the round.</p>
+        <button commandfor="game" command="--start">Ready</button>
+      </div>
+
+      <div when-some-scene="playing between paused">
+        <game-round-counter></game-round-counter>
+        <game-stat key="best" label="Best" format="ms"></game-stat>
+      </div>
+
+      <game-toast when-some-scene="playing between paused" trigger="pass"></game-toast>
+      <game-toast when-some-scene="playing between paused" trigger="fail"></game-toast>
+
+      <div when-some-scene="playing between paused">
+        <reaction-game></reaction-game>
+      </div>
+
+      <div when-some-scene="result" data-overlay>
+        <h1>Results</h1>
+        <game-result-stat format="ms" label="Average reaction time"></game-result-stat>
+        <!-- Thresholds: 5 rounds, so avg*5 = total score cutoffs -->
+        <game-result-message when-max-score="999">
+          Lightning fast. Are you even human?
+        </game-result-message>
+        <game-result-message when-min-score="1000" when-max-score="1249">
+          Very quick reflexes. Well above average.
+        </game-result-message>
+        <game-result-message when-min-score="1250" when-max-score="1499">
+          Solid reaction time. Right around the human average.
+        </game-result-message>
+        <game-result-message when-min-score="1500" when-max-score="1999">
+          Not bad. A bit above average, but nothing to worry about.
+        </game-result-message>
+        <game-result-message when-min-score="2000">
+          A bit slow. Maybe lay off the coffee. Or have more coffee.
+        </game-result-message>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:24px">
+          <game-share></game-share>
+          <button commandfor="game" command="--restart">Try again</button>
+        </div>
+      </div>
+
+    </game-shell>
+
+    <script type="module" src="./reaction-game.js"></script>
+  </body>
+</html>

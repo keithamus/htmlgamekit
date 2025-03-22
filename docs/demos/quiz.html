@@ -1,0 +1,65 @@
+---
+layout: demo
+title: Quiz Demo
+permalink: /demos/quiz/
+style: |
+  :root { --game-accent: #818cf8; }
+---
+<game-shell id="game" rounds="4" between-delay="800">
+  <div when-some-scene="intro" data-overlay>
+    <h1>Quiz Demo</h1>
+    <p>4 questions. Pick the right answer.</p>
+    <button commandfor="game" command="--start" autofocus>Start</button>
+  </div>
+
+  <game-timer when-some-scene="playing between paused" duration="10"></game-timer>
+  <game-flash when-some-scene="playing between paused"></game-flash>
+  <game-toast when-some-scene="playing between paused" trigger="pass">Correct!</game-toast>
+  <game-toast when-some-scene="playing between paused" trigger="fail">Wrong!</game-toast>
+
+  <div when-some-scene="playing between paused"
+    style="display:flex;align-items:center;justify-content:center;position:fixed;inset:0;padding:60px 20px 20px">
+    <game-quiz>
+      <fieldset data-tier="0">
+        <legend>What is the capital of France?</legend>
+        <label><input type="radio" name="q1" data-correct>Paris</label>
+        <label><input type="radio" name="q1">London</label>
+        <label><input type="radio" name="q1">Berlin</label>
+        <label><input type="radio" name="q1">Madrid</label>
+      </fieldset>
+      <fieldset data-tier="0">
+        <legend>What is 7 x 8?</legend>
+        <label><input type="radio" name="q2" data-correct>56</label>
+        <label><input type="radio" name="q2">48</label>
+        <label><input type="radio" name="q2">64</label>
+        <label><input type="radio" name="q2">42</label>
+      </fieldset>
+      <fieldset data-tier="0">
+        <legend>Which planet is closest to the Sun?</legend>
+        <label><input type="radio" name="q3" data-correct>Mercury</label>
+        <label><input type="radio" name="q3">Venus</label>
+        <label><input type="radio" name="q3">Mars</label>
+        <label><input type="radio" name="q3">Earth</label>
+      </fieldset>
+      <fieldset data-tier="0">
+        <legend>What year did the web launch?</legend>
+        <label><input type="radio" name="q4" data-correct>1991</label>
+        <label><input type="radio" name="q4">1989</label>
+        <label><input type="radio" name="q4">1993</label>
+        <label><input type="radio" name="q4">1995</label>
+      </fieldset>
+    </game-quiz>
+  </div>
+
+  <div when-some-scene="result" data-overlay>
+    <h1>Results</h1>
+    <game-result-stat label="Score" animate="600"></game-result-stat>
+    <game-result-message>
+      <option when-min-score="4">Perfect!</option>
+      <option when-min-score="3" when-max-score="3">Almost!</option>
+      <option when-max-score="2">Keep studying.</option>
+    </game-result-message>
+    <button commandfor="game" command="--restart" autofocus>Again</button>
+  </div>
+</game-shell>
+<script type="module" src="{{ site.baseurl }}/demos/demo-init.js"></script>

@@ -1,0 +1,7 @@
+<div class="demo-embed">
+  <iframe src="{{ site.baseurl }}/demos/{{ demo }}/" loading="lazy"
+    title="{{ title | default: 'Live demo' }}"
+    style="width:100%;height:{{ height | default: '400px' }};border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:#111;">
+  </iframe>
+  <a href="{{ site.baseurl }}/demos/{{ demo }}/" target="_blank" class="demo-link">Open in new tab</a>
+</div>

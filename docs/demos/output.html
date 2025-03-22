@@ -1,0 +1,44 @@
+---
+layout: demo
+title: Output Elements Demo
+permalink: /demos/output/
+style: |
+  :root { --game-accent: #a78bfa; }
+  .live-stats {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 24px; font-size: 18px; font-weight: 700;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+    padding: 12px 24px; border-radius: 8px; z-index: 20;
+    pointer-events: none;
+  }
+  .live-stats span { opacity: 0.5; font-weight: 400; font-size: 12px;
+    text-transform: uppercase; letter-spacing: 0.08em; }
+---
+<game-shell id="game" rounds="5" between-delay="500"
+            progression="fixed"
+            progression-params='{"speed":{"start":1,"end":5}}'>
+  <div when-some-scene="intro" data-overlay>
+    <h1>Output Elements</h1>
+    <p>Live score, round, and difficulty readouts -- no custom JS needed.</p>
+    <button commandfor="game" command="--start" autofocus>Start</button>
+  </div>
+
+  <game-timer when-some-scene="playing between paused" duration="5"></game-timer>
+
+  <div when-some-scene="playing between paused">
+    <demo-target></demo-target>
+  </div>
+
+  <div when-some-scene="playing between paused" class="live-stats">
+    <div><span>Round </span><game-signal key="round"></game-signal></div>
+    <div><span>Score </span><game-signal key="score"></game-signal></div>
+    <div><span>Speed </span><game-signal key="speed" format="1dp"></game-signal></div>
+  </div>
+
+  <div when-some-scene="result" data-overlay>
+    <h1>Done!</h1>
+    <game-result-stat label="Score" animate="600"></game-result-stat>
+    <button commandfor="game" command="--restart" autofocus>Again</button>
+  </div>
+</game-shell>
+<script type="module" src="{{ site.baseurl }}/demos/demo-init.js"></script>

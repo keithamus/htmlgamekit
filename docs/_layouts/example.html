@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>{{ title }} - {{ site.title }}</title>
+  <link rel="stylesheet" href="{{ site.baseurl }}/src/game-base.css" />
+  {% for sheet in css %}
+  <link rel="stylesheet" href="{{ sheet }}" />
+  {% endfor %}
+  <style>
+    .back-link {
+      position: fixed;
+      bottom: 12px;
+      right: 16px;
+      z-index: 200;
+      font-size: 13px;
+      font-family: system-ui, sans-serif;
+      color: rgba(255,255,255,0.3);
+      text-decoration: none;
+      transition: color 0.15s ease;
+      pointer-events: auto;
+    }
+    .back-link:hover { color: rgba(255,255,255,0.7); }
+  </style>
+</head>
+<body>
+  {{ content }}
+  <a class="back-link" href="{{ site.baseurl }}/">&larr; Back to docs</a>
+</body>
+</html>
