@@ -1,0 +1,83 @@
+---
+layout: demo
+title: Word Source Demo
+permalink: /demos/word-source/
+style: |
+  :root { --game-accent: #34d399; }
+  .board {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: fixed; inset: 0;
+    gap: 8px; padding: 60px 20px 20px;
+  }
+  .rows { display: flex; flex-direction: column; gap: 6px; }
+---
+
+<game-shell
+  id="game"
+  game-id="word-source-demo"
+  rounds="3"
+  score-order="desc"
+  between-delay="1200"
+>
+  <game-word-source
+    words-url="https://words.htmlgamekit.dev"
+    length="5"
+    mode="daily"
+    validate
+  >
+  </game-word-source>
+
+  <div when-some-scene="intro" data-overlay>
+    <h1>Word Guess</h1>
+    <p>
+      Guess the 5-letter word in 6 tries.<br />
+      Green = right spot. Yellow = wrong spot.
+    </p>
+    <button commandfor="game" command="--start" autofocus>Play</button>
+  </div>
+
+  <div when-some-scene="playing between paused" class="board">
+    <game-round-counter></game-round-counter>
+    <div class="rows"></div>
+  </div>
+
+  <game-toast
+    trigger="pass"
+    when-some-scene="playing between paused"
+  ></game-toast>
+  <game-toast
+    trigger="fail"
+    when-some-scene="playing between paused"
+  ></game-toast>
+  <game-flash when-some-scene="playing between paused"></game-flash>
+
+  <game-audio>
+    <game-sample
+      trigger="pass"
+      type="marimba"
+      scale="pentatonic"
+      notes="4"
+      gain="0.25"
+      scale-root="440"
+      scale-spacing="0.08"
+    >
+    </game-sample>
+    <game-sample trigger="fail" type="noise" gain="0.3" duration="0.12">
+    </game-sample>
+  </game-audio>
+
+  <div when-some-scene="result" data-overlay>
+    <h1>Results</h1>
+    <game-result-stat label="Score"></game-result-stat>
+    <game-result-message when-max-score="1"
+      >Tough round. Words are hard.</game-result-message
+    >
+    <game-result-message when-min-score="2" when-max-score="2"
+      >Not bad!</game-result-message
+    >
+    <game-result-message when-min-score="3">Word wizard!</game-result-message>
+    <button commandfor="game" command="--restart" autofocus>Play again</button>
+  </div>
+</game-shell>
+<script type="module" src="{{ site.baseurl }}/demos/word-source.js"></script>

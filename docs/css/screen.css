@@ -1,0 +1,602 @@
+@import "open-props/normalize.dark.min.css";
+@import "open-props/media.min.css";
+@import "openswatch/css/open-swatch.css";
+
+/* ================================================================
+   HTMLGameKit docs -- main stylesheet
+   ================================================================ */
+
+:root {
+  --surface-1: var(--neutral-2);
+  --surface-2: var(--neutral-3);
+  --surface-3: var(--neutral-4);
+  --border: var(--neutral-5);
+  --text-1: var(--neutral-13);
+  --text-2: var(--neutral-9);
+  --accent: var(--blue-8);
+  --accent-subtle: oklch(from var(--accent) l c h / 0.15);
+  --green: var(--emerald-8);
+  --red: var(--red-8);
+  --yellow: var(--amber-8);
+  --sidebar-w: 240px;
+  --content-max: 800px;
+
+  @media (prefers-color-scheme: dark) {
+    --surface-1: var(--neutral-2);
+    --surface-2: var(--neutral-1);
+    --surface-3: var(--neutral-3);
+    --border: var(--neutral-4);
+    --text-1: var(--neutral-13);
+    --text-2: var(--neutral-12);
+    --accent: var(--blue-5);
+    --green: var(--emerald-4);
+    --red: var(--red-5);
+    --yellow: var(--amber-4);
+  }
+}
+
+html {
+  color-scheme: light dark;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  background: var(--surface-1);
+  color: var(--text-1);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  display: flex;
+  min-height: 100dvh;
+}
+
+/* ================================================================
+   Sidebar
+   ================================================================ */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-w);
+  padding: 24px 16px;
+  background: var(--surface-2);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.sidebar-logo {
+  display: block;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-1);
+  text-decoration: none;
+  margin-bottom: 24px;
+  letter-spacing: -0.02em;
+}
+
+.sidebar-nav {
+  list-style: none;
+}
+
+.sidebar-nav li {
+  margin-bottom: 2px;
+}
+
+.sidebar-section {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+  margin-top: 20px;
+  margin-bottom: 8px;
+  padding-left: 8px;
+}
+
+.sidebar-nav a {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 14px;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.sidebar-nav a:hover {
+  color: var(--text-1);
+  background: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.04));
+}
+
+.sidebar-nav a[aria-current="page"] {
+  color: var(--text-1);
+  background: light-dark(rgba(0, 0, 0, 0.07), rgba(255, 255, 255, 0.06));
+  font-weight: 600;
+}
+
+.sidebar-children {
+  list-style: none;
+  padding-left: 12px;
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+.sidebar-children li {
+  margin-bottom: 1px;
+}
+
+.sidebar-children a {
+  font-size: 13px;
+  padding: 4px 8px;
+  color: var(--text-2);
+  opacity: 0.8;
+}
+
+.sidebar-children a:hover {
+  opacity: 1;
+}
+
+.sidebar-children a[aria-current="page"] {
+  opacity: 1;
+}
+
+/* ================================================================
+   Main content
+   ================================================================ */
+
+main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  padding: 48px 48px 80px;
+  max-width: calc(var(--content-max) + var(--sidebar-w) + 96px);
+}
+
+main > h1 {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  margin-bottom: 24px;
+}
+
+/* ================================================================
+   Typography
+   ================================================================ */
+
+.header-anchor {
+  text-decoration: none;
+  color: inherit;
+}
+
+.header-anchor:hover {
+  text-decoration: none;
+}
+
+.header-anchor:hover::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: -1.2em;
+  width: 0.7em;
+  height: 0.7em;
+  top: 0.3em;
+  background: currentColor;
+  opacity: 0.4;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+}
+
+:where(h1, h2, h3, h4, h5, h6):has(.header-anchor) {
+  position: relative;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-top: 40px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 28px;
+  margin-bottom: 8px;
+}
+
+h4 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 20px;
+  margin-bottom: 8px;
+}
+
+p {
+  margin-bottom: 12px;
+  color: var(--text-2);
+}
+
+p strong,
+li strong {
+  color: var(--text-1);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+ul,
+ol {
+  margin-bottom: 12px;
+  padding-left: 24px;
+  color: var(--text-2);
+}
+
+li {
+  margin-bottom: 4px;
+}
+
+li code {
+  font-size: 0.875em;
+}
+
+/* ================================================================
+   Code
+   ================================================================ */
+
+code {
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  font-size: 0.875em;
+  background: var(--accent-subtle);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+pre {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  overflow-x: auto;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  color: var(--text-1);
+  font-size: 14px;
+}
+
+/* ================================================================
+   Tables
+   ================================================================ */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-2);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--text-2);
+}
+
+td code {
+  white-space: nowrap;
+}
+
+/* ================================================================
+   Hero (landing page)
+   ================================================================ */
+
+.hero h1 {
+  font-size: clamp(32px, 5vw, 56px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--green), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero .tagline {
+  font-size: clamp(16px, 2vw, 20px);
+  color: var(--text-2);
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+/* ================================================================
+   Feature / example card grids
+   ================================================================ */
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.feature {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.feature h3 {
+  color: var(--text-1);
+  margin-top: 0;
+}
+
+.feature p {
+  font-size: 14px;
+  margin-bottom: 0;
+}
+
+.examples,
+.tutorials {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.example-card,
+.tutorial-card {
+  display: block;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.example-card:hover,
+.tutorial-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.example-card h3,
+.tutorial-card h3 {
+  color: var(--text-1);
+  margin-top: 0;
+}
+
+.example-card p,
+.tutorial-card p {
+  font-size: 14px;
+  margin-bottom: 0;
+}
+
+.tutorial-demo-link {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease;
+  margin-bottom: 16px;
+}
+
+.tutorial-demo-link:hover {
+  background: oklch(from var(--accent) l c h / 0.25);
+  text-decoration: none;
+}
+
+/* ================================================================
+   API definition lists
+   ================================================================ */
+
+dl.def {
+  margin-bottom: 24px;
+}
+
+dl.def dt {
+  font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 16px;
+  margin-bottom: 4px;
+}
+
+dl.def dt:first-child {
+  margin-top: 0;
+}
+
+dl.def dd {
+  color: var(--text-2);
+  font-size: 14px;
+  margin-bottom: 12px;
+  padding-left: 16px;
+}
+
+.badge {
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.badge.attr {
+  background: oklch(from var(--green) l c h / 0.15);
+  color: var(--green);
+}
+
+.badge.prop {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+.badge.method {
+  background: oklch(from var(--red) l c h / 0.15);
+  color: var(--red);
+}
+
+.badge.event {
+  background: oklch(from var(--yellow) l c h / 0.15);
+  color: var(--yellow);
+}
+
+/* ================================================================
+   Syntax highlighting (Prism / eleventy-plugin-syntaxhighlight)
+   Light: GitHub-light inspired   Dark: GitHub-dark inspired
+   ================================================================ */
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: light-dark(#6a737d, #636e7b);
+}
+
+.token.punctuation {
+  color: light-dark(#24292e, #8b949e);
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: light-dark(#005cc5, #79c0ff);
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: light-dark(#22863a, #a5d6ff);
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string {
+  color: light-dark(#6f42c1, #d2a8ff);
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: light-dark(#d73a49, #ff7b72);
+}
+
+.token.function,
+.token.class-name {
+  color: light-dark(#6f42c1, #d2a8ff);
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: light-dark(#e36209, #ffa657);
+}
+
+/* ================================================================
+   Responsive
+   ================================================================ */
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: static;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 16px;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .sidebar-section {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  body {
+    flex-direction: column;
+  }
+
+  main {
+    margin-left: 0;
+    padding: 24px 20px 60px;
+  }
+}
+
+/* --- Demo embeds --- */
+
+.demo-embed {
+  margin: 24px 0;
+  position: relative;
+}
+
+.demo-embed iframe {
+  display: block;
+}
+
+.demo-link {
+  display: block;
+  text-align: right;
+  font-size: 12px;
+  margin-top: 4px;
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
+}
+
+.demo-link:hover {
+  opacity: 0.8;
+}

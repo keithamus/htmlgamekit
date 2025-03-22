@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Guess - HTMLGameKit Example</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "signal-polyfill": "../../node_modules/signal-polyfill/dist/index.js"
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="../../src/game-base.css" />
+  </head>
+  <body>
+    <game-shell
+      id="game"
+      game-id="word-guess"
+      storage-key="word-guess"
+      rounds="5"
+      score-order="desc"
+      between-delay="1200"
+    >
+      <game-word-source
+        words-url="https://words.htmlgamekit.dev"
+        length="5"
+        mode="daily"
+        validate
+      ></game-word-source>
+
+      <div when-some-scene="intro" data-overlay>
+        <h1>Word Guess</h1>
+        <p>
+          Guess the 5-letter word in 6 tries. Green = right spot. Yellow = wrong
+          spot. 5 rounds — score is how many you get right.
+        </p>
+        <button commandfor="game" command="--start">Play</button>
+      </div>
+
+      <div when-some-scene="playing between paused">
+        <game-round-counter></game-round-counter>
+      </div>
+
+      <game-toast
+        when-some-scene="playing between paused"
+        trigger="pass"
+      ></game-toast>
+      <game-toast
+        when-some-scene="playing between paused"
+        trigger="fail"
+      ></game-toast>
+      <game-flash when-some-scene="playing between paused"></game-flash>
+
+      <game-audio>
+        <game-sample
+          trigger="pass"
+          type="marimba"
+          scale="pentatonic"
+          notes="5"
+          gain="0.25"
+          scale-root="440"
+          scale-spacing="0.08"
+        >
+        </game-sample>
+        <game-sample trigger="fail" type="noise" gain="0.3" duration="0.12">
+        </game-sample>
+      </game-audio>
+
+      <div when-some-scene="playing between paused">
+        <word-game></word-game>
+      </div>
+
+      <div when-some-scene="result" data-overlay>
+        <h1>Results</h1>
+        <game-result-stat label="Score"></game-result-stat>
+        <game-result-message when-max-score="1">
+          Tough round. Words are hard.
+        </game-result-message>
+        <game-result-message when-min-score="2" when-max-score="3">
+          Not bad. You know your letters.
+        </game-result-message>
+        <game-result-message when-min-score="4">
+          Word wizard. Impressive vocabulary.
+        </game-result-message>
+        <div
+          style="
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 24px;
+          "
+        >
+          <game-share></game-share>
+          <button commandfor="game" command="--restart">Play again</button>
+        </div>
+      </div>
+    </game-shell>
+
+    <script type="module" src="./word-game.js"></script>
+  </body>
+</html>

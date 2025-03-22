@@ -1,0 +1,89 @@
+{
+  "name": "htmlgamekit",
+  "version": "0.1.0",
+  "description": "A Web Components game framework. Declarative HTML game shells with state machines, round progressions, timers, and more.",
+  "keywords": [
+    "game",
+    "web-components",
+    "custom-elements",
+    "html",
+    "game-framework",
+    "game-engine",
+    "browser-game",
+    "state-machine"
+  ],
+  "homepage": "https://htmlgamekit.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keithamus/htmlgamekit.git"
+  },
+  "funding": {
+    "type": "individual",
+    "url": "https://github.com/sponsors/keithamus"
+  },
+  "license": "MIT",
+  "author": "Keith Cirkel",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./auto": "./src/auto.js",
+    "./component": "./src/component.js",
+    "./context": "./src/context.js",
+    "./events": "./src/events.js",
+    "./shell": "./src/shell.js",
+    "./hud": "./src/hud.js",
+    "./timer": "./src/timer.js",
+    "./challenge": "./src/challenge.js",
+    "./share": "./src/share.js",
+    "./score-form": "./src/score-form.js",
+    "./leaderboard": "./src/leaderboard.js",
+    "./result-stat": "./src/result-stat.js",
+    "./quiz": "./src/quiz.js",
+    "./result-message": "./src/result-message.js",
+    "./flash": "./src/flash.js",
+    "./between": "./src/between.js",
+    "./game-signal": "./src/game-signal.js",
+    "./audio": "./src/audio.js",
+    "./sequencer": "./src/sequencer.js",
+    "./synth": "./src/synth.js",
+    "./histogram": "./src/histogram.js",
+    "./progressions/fixed": "./src/progressions/fixed.js",
+    "./progressions/staircase": "./src/progressions/staircase.js",
+    "./progressions/tier": "./src/progressions/tier.js",
+    "./pending-task": "./src/pending-task.js",
+    "./scores": "./src/scores.js",
+    "./toast": "./src/toast.js",
+    "./icon": "./src/icon.js",
+    "./tile-input": "./src/tile-input.js",
+    "./trophy": "./src/trophy.js",
+    "./preferences": "./src/preferences.js",
+    "./words": "./src/words.js",
+    "./format": "./src/format.js",
+    "./conditions": "./src/conditions.js",
+    "./triggers": "./src/triggers.js",
+    "./signals": "./src/signals.js",
+    "./game-base.css": "./src/game-base.css"
+  },
+  "main": "./src/index.js",
+  "files": [
+    "src/",
+    "custom-elements.json",
+    "LICENSE"
+  ],
+  "scripts": {
+    "cem": "cem analyze",
+    "docs:build": "npm run build --prefix docs",
+    "docs:start": "npm run start --prefix docs",
+    "test": "web-test-runner"
+  },
+  "dependencies": {
+    "signal-polyfill": "^0.2.2"
+  },
+  "devDependencies": {
+    "@custom-elements-manifest/analyzer": "^0.11.0",
+    "@open-wc/testing": "^4.0.0",
+    "@web/test-runner": "^0.20.2",
+    "@web/test-runner-playwright": "^0.11.1"
+  },
+  "customElements": "custom-elements.json"
+}

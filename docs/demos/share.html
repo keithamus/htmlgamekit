@@ -1,0 +1,44 @@
+---
+layout: demo
+title: Share Demo
+permalink: /demos/share/
+style: |
+  :root { --game-accent: #818cf8; }
+---
+
+<game-shell id="game" rounds="3" between-delay="300">
+  <div when-some-scene="intro" data-overlay>
+    <h1>Share Demo</h1>
+    <p>Play 3 rounds, then share your result.</p>
+    <button commandfor="game" command="--start" autofocus>Start</button>
+  </div>
+
+  <game-timer
+    when-some-scene="playing between paused"
+    duration="5"
+  ></game-timer>
+
+  <div when-some-scene="playing between paused">
+    <demo-target></demo-target>
+  </div>
+
+  <div when-some-scene="result" data-overlay>
+    <h1>Done!</h1>
+    <game-result-stat label="Score"></game-result-stat>
+    <div
+      style="
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 24px;
+      "
+    >
+      <game-share
+        >Share Demo: I scored {score}! Can you beat it? {url}</game-share
+      >
+      <button commandfor="game" command="--restart" autofocus>Again</button>
+    </div>
+  </div>
+</game-shell>
+<script type="module" src="{{ site.baseurl }}/demos/demo-init.js"></script>

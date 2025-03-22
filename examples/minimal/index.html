@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Click Counter - HTMLGameKit Minimal Example</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "signal-polyfill": "../../node_modules/signal-polyfill/dist/index.js"
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="../../src/game-base.css" />
+  </head>
+  <body>
+    <game-shell
+      id="game"
+      game-id="click-counter"
+      storage-key="click-counter"
+      rounds="10"
+      score-order="asc"
+      between-delay="300"
+    >
+      <div when-some-scene="intro" data-overlay>
+        <h1>Click Counter</h1>
+        <p>
+          Click the target as fast as you can. 10 rounds. Your score is the
+          total time across all rounds.
+        </p>
+        <button commandfor="game" command="--start">Start</button>
+      </div>
+
+      <div when-some-scene="playing between paused">
+        <game-round-counter></game-round-counter>
+        <game-stat key="time" format="ms">Time</game-stat>
+      </div>
+
+      <game-toast
+        when-some-scene="playing between paused"
+        trigger="pass"
+      ></game-toast>
+      <game-toast
+        when-some-scene="playing between paused"
+        trigger="fail"
+      ></game-toast>
+
+      <div when-some-scene="playing between paused">
+        <click-target></click-target>
+      </div>
+
+      <div when-some-scene="result" data-overlay>
+        <h1>Done!</h1>
+        <game-result-stat format="ms" label="Total time"></game-result-stat>
+        <div
+          style="
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 24px;
+          "
+        >
+          <game-share></game-share>
+          <button commandfor="game" command="--restart">Play again</button>
+        </div>
+      </div>
+    </game-shell>
+
+    <script type="module" src="./click-game.js"></script>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+---
+layout: demo
+title: Challenge Demo
+permalink: /demos/challenge/
+style: |
+  :root { --game-accent: #ef4444; }
+---
+
+<game-shell id="game" rounds="3" between-delay="300">
+  <div when-some-scene="intro" data-overlay>
+    <h1>Challenge Demo</h1>
+    <game-challenge></game-challenge>
+    <p>Beat the challenger's score!</p>
+    <button commandfor="game" command="--start" autofocus>Play</button>
+  </div>
+
+  <game-timer
+    when-some-scene="playing between paused"
+    duration="5"
+  ></game-timer>
+
+  <div when-some-scene="playing between paused">
+    <demo-target></demo-target>
+  </div>
+
+  <div when-some-scene="result" data-overlay>
+    <h1>Done!</h1>
+    <game-result-stat label="Score"></game-result-stat>
+    <game-share>Challenge Demo: {score}! Beat me: {url}</game-share>
+    <button commandfor="game" command="--restart" autofocus>Again</button>
+  </div>
+</game-shell>
+<script type="module" src="{{ site.baseurl }}/demos/challenge.js"></script>

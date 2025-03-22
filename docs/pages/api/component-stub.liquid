@@ -1,0 +1,11 @@
+---
+layout: component
+pagination:
+  data: unmappedComponents
+  size: 1
+  alias: component
+permalink: "/api/components/{{ component.tagName | remove: 'game-' }}/"
+eleventyComputed:
+  title: "{{ component.name }}"
+  cemTag: "{{ component.tagName }}"
+---

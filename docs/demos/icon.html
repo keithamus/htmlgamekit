@@ -1,0 +1,86 @@
+---
+layout: demo
+title: Icon Demo
+permalink: /demos/icon/
+style: |
+  :root { --game-accent: #34d399; }
+  .icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 16px; max-width: 400px; margin: 24px auto;
+  }
+  .icon-cell {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px; font-size: 12px; opacity: 0.7;
+  }
+  game-icon { --game-icon-size: 32px; }
+  .conditional { margin-top: 24px; font-size: 18px; }
+  .conditional game-icon { --game-icon-size: 48px; }
+---
+
+<game-shell
+  id="game"
+  rounds="5"
+  between-delay="300"
+  sprite-sheet="https://cdn.jsdelivr.net/npm/lucide-static@latest/sprite.svg"
+>
+  <div when-some-scene="intro" data-overlay>
+    <h1>Icon Demo</h1>
+    <p>
+      Icons from an SVG sprite sheet. Play to see conditional icons change based
+      on score.
+    </p>
+    <div class="icon-grid">
+      <div class="icon-cell">
+        <game-icon name="star"></game-icon>
+        <span>star</span>
+      </div>
+      <div class="icon-cell">
+        <game-icon name="heart"></game-icon>
+        <span>heart</span>
+      </div>
+      <div class="icon-cell">
+        <game-icon name="zap"></game-icon>
+        <span>zap</span>
+      </div>
+      <div class="icon-cell">
+        <game-icon name="trophy"></game-icon>
+        <span>trophy</span>
+      </div>
+      <div class="icon-cell">
+        <game-icon name="target"></game-icon>
+        <span>target</span>
+      </div>
+      <div class="icon-cell">
+        <game-icon name="flame"></game-icon>
+        <span>flame</span>
+      </div>
+    </div>
+    <button commandfor="game" command="--start" autofocus>Start</button>
+  </div>
+
+  <game-timer
+    when-some-scene="playing between paused"
+    duration="5"
+  ></game-timer>
+  <game-flash when-some-scene="playing between paused"></game-flash>
+
+  <div when-some-scene="playing between paused">
+    <demo-target></demo-target>
+  </div>
+
+  <div when-some-scene="result" data-overlay>
+    <h1>Done!</h1>
+    <game-result-stat label="Score"></game-result-stat>
+    <div class="conditional">
+      <game-icon name="meh">
+        <option when-min-score="5" value="trophy"></option>
+        <option when-min-score="3" value="star"></option>
+        <option when-max-score="2" value="frown"></option>
+      </game-icon>
+      <span> -- icon changes with score</span>
+    </div>
+    <button commandfor="game" command="--restart" autofocus>Again</button>
+  </div>
+</game-shell>
+<script type="module" src="{{ site.baseurl }}/demos/demo-init.js"></script>

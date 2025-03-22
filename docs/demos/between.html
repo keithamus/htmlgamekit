@@ -1,0 +1,42 @@
+---
+layout: demo
+title: Between Demo
+permalink: /demos/between/
+style: |
+  :root { --game-accent: #f472b6; }
+---
+
+<game-shell id="game" rounds="5" between-delay="2000">
+  <div when-some-scene="intro" data-overlay>
+    <h1>Between Demo</h1>
+    <p>Click the dot. The between-rounds screen shows feedback.</p>
+    <button commandfor="game" command="--start" autofocus>Start</button>
+  </div>
+
+  <game-timer
+    when-some-scene="playing between paused"
+    duration="5"
+  ></game-timer>
+
+  <div when-some-scene="playing between paused">
+    <demo-target></demo-target>
+  </div>
+
+  <game-between when-some-scene="between">
+    <div
+      style="font-size: clamp(48px, 10vw, 80px); font-weight: 900"
+      data-between="feedback"
+    ></div>
+    <div style="margin-top: 16px; opacity: 0.5">
+      Round <span data-between="round"></span> &middot; Score
+      <span data-between="score"></span>
+    </div>
+  </game-between>
+
+  <div when-some-scene="result" data-overlay>
+    <h1>Done!</h1>
+    <game-result-stat label="Score" animate="400"></game-result-stat>
+    <button commandfor="game" command="--restart" autofocus>Again</button>
+  </div>
+</game-shell>
+<script type="module" src="{{ site.baseurl }}/demos/demo-init.js"></script>

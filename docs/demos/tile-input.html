@@ -1,0 +1,36 @@
+---
+layout: demo
+title: Tile Input Demo
+permalink: /demos/tile-input/
+style: |
+  :root { --game-accent: #34d399; }
+  .game-area {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: fixed; inset: 0; gap: 16px;
+    padding: 60px 20px 20px;
+  }
+  #hint { font-size: 14px; opacity: 0.5; }
+---
+
+<game-shell id="game" rounds="3" between-delay="800">
+  <div when-some-scene="intro" data-overlay>
+    <h1>Tile Input Demo</h1>
+    <p>Type the secret word. 5 letters.</p>
+    <button commandfor="game" command="--start" autofocus>Start</button>
+  </div>
+
+  <game-flash when-some-scene="playing between paused"></game-flash>
+
+  <div when-some-scene="playing between paused" class="game-area">
+    <game-tile-input length="5"></game-tile-input>
+    <div id="hint"></div>
+  </div>
+
+  <div when-some-scene="result" data-overlay>
+    <h1>Done!</h1>
+    <game-result-stat label="Score"></game-result-stat>
+    <button commandfor="game" command="--restart" autofocus>Again</button>
+  </div>
+</game-shell>
+<script type="module" src="{{ site.baseurl }}/demos/tile-input.js"></script>

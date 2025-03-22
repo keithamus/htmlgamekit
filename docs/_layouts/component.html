@@ -1,0 +1,80 @@
+---
+layout: base
+---
+
+<h1>{{ title }}</h1>
+
+{% if demo %}
+  {% include "demo-embed.html", demo: demo, title: demoTitle, height: demoHeight %}
+{% endif %}
+
+{% assign cemData = cem[cemTag] %}
+{% if cemData %}
+
+  {% unless cemSkip contains "attrs" %}
+    {% if cemData.attributes.size > 0 %}
+<h3 id="attributes">
+  <a class="header-anchor" href="#attributes">Attributes</a>
+</h3>
+
+{% cem_attrs cemTag %}
+    {% endif %}
+  {% endunless %}
+
+  {% unless cemSkip contains "methods" %}
+    {% if cemData.methods.size > 0 %}
+<h3 id="methods"><a class="header-anchor" href="#methods">Methods</a></h3>
+
+{% cem_methods cemTag %}
+    {% endif %}
+  {% endunless %}
+
+  {% unless cemSkip contains "events" %}
+    {% if cemData.events.size > 0 %}
+<h3 id="events"><a class="header-anchor" href="#events">Events</a></h3>
+
+{% cem_events cemTag %}
+    {% endif %}
+  {% endunless %}
+
+  {% unless cemSkip contains "cssStates" %}
+    {% if cemData.cssStates.size > 0 %}
+<h3 id="custom-states">
+  <a class="header-anchor" href="#custom-states">Custom States</a>
+</h3>
+
+{% cem_cssstates cemTag %}
+    {% endif %}
+  {% endunless %}
+
+  {% unless cemSkip contains "cssProperties" %}
+    {% if cemData.cssProperties.size > 0 %}
+<h3 id="css-custom-properties">
+  <a class="header-anchor" href="#css-custom-properties">CSS Custom Properties</a>
+</h3>
+
+{% cem_cssprops cemTag %}
+    {% endif %}
+  {% endunless %}
+
+  {% unless cemSkip contains "cssParts" %}
+    {% if cemData.cssParts.size > 0 %}
+<h3 id="shadow-dom-parts">
+  <a class="header-anchor" href="#shadow-dom-parts">Shadow DOM Parts</a>
+</h3>
+
+{% cem_cssparts cemTag %}
+    {% endif %}
+  {% endunless %}
+
+  {% unless cemSkip contains "slots" %}
+    {% if cemData.slots.size > 0 %}
+<h3 id="slots"><a class="header-anchor" href="#slots">Slots</a></h3>
+
+{% cem_slots cemTag %}
+    {% endif %}
+  {% endunless %}
+
+{% endif %}
+
+{{ content }}

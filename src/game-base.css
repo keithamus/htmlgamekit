@@ -1,0 +1,279 @@
+/* htmlgamekit base -- reset, custom properties, and light-DOM
+   content styles. Scene visibility is handled by game-shell
+   via manual slot assignment (no CSS display toggling). */
+
+game-shell:not(:defined) {
+  display: none;
+}
+
+game-shell :not(:defined) {
+  visibility: hidden;
+}
+
+:root {
+  --game-bg: #111;
+  --game-text: #eee;
+  --game-accent: #fff;
+  --game-overlay-bg: rgba(0, 0, 0, 0.8);
+  --game-btn-bg: #fff;
+  --game-btn-text: #111;
+  --game-btn-border: rgba(255, 255, 255, 0.5);
+  --game-result-gradient-from: #6ee7b7;
+  --game-result-gradient-to: #3b82f6;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100dvw;
+  height: 100dvh;
+  overflow: clip;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  background: var(--game-bg);
+  color: var(--game-text);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Overlay styling (opt-in via data-overlay) --- */
+
+[data-overlay] {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: var(--game-overlay-bg, rgba(0, 0, 0, 0.8));
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100;
+  text-align: center;
+  padding: max(40px, env(safe-area-inset-top))
+    max(40px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom))
+    max(40px, env(safe-area-inset-left));
+  overflow-y: auto;
+  color: var(--game-text, #eee);
+}
+
+/* --- Overlay content (light DOM inside [data-overlay]) --- */
+
+[data-overlay] h1 {
+  font-size: clamp(28px, 5vw, 56px);
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+}
+
+[data-overlay] p {
+  font-size: clamp(14px, 2vw, 20px);
+  max-width: 600px;
+  line-height: 1.6;
+  opacity: 0.8;
+  margin-bottom: 12px;
+}
+
+[data-overlay] button {
+  margin-top: 24px;
+  padding: 14px 40px;
+  font-size: 18px;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  background: var(--game-btn-bg);
+  color: var(--game-btn-text);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  font-family: inherit;
+}
+
+[data-overlay] button:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+}
+
+[data-overlay] .result-buttons,
+[data-overlay] [style*="display:flex"] {
+  margin-top: 24px;
+}
+
+[data-overlay] .result-buttons button,
+[data-overlay] [style*="display:flex"] button {
+  margin-top: 0;
+}
+
+[data-overlay] button[command="--restart"] {
+  background: var(--game-btn-bg);
+  color: var(--game-btn-text);
+}
+
+/* Toast pass/fail default colours */
+
+game-toast[trigger="pass"] {
+  --game-toast-color: #6ee7b7;
+}
+game-toast[trigger="fail"],
+game-toast[trigger="timeout"] {
+  --game-toast-color: #f87171;
+}
+
+/* Links inside overlays */
+
+[data-overlay] a {
+  color: rgba(255, 255, 255, 0.45);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+[data-overlay] a:hover {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+[data-overlay] #intro-tip {
+  font-size: 14px;
+  opacity: 0.5;
+  font-style: italic;
+}
+
+[data-overlay] .group-name {
+  display: none;
+  font-size: 14px;
+  opacity: 0.5;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+[data-overlay] #result-desc {
+  margin-top: 16px;
+  font-size: clamp(14px, 1.8vw, 18px);
+  max-width: 550px;
+  opacity: 0.7;
+}
+
+[data-overlay] game-score-form {
+  display: block;
+  margin-top: 32px;
+  margin-bottom: 32px;
+}
+
+/* Result messages */
+
+game-result-message {
+  display: none;
+  margin-top: 16px;
+  font-size: clamp(14px, 1.8vw, 18px);
+  max-width: 550px;
+  opacity: 0.7;
+  line-height: 1.6;
+}
+
+game-result-message:state(active) {
+  display: block;
+}
+
+/* --- Quiz component (light-DOM styles for <game-quiz>) --- */
+
+game-quiz {
+  color: var(--game-text, #eee);
+}
+
+game-quiz fieldset {
+  border: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+game-quiz fieldset[hidden] {
+  display: none;
+}
+
+game-quiz legend {
+  grid-column: 1 / -1;
+  font-size: clamp(24px, 4vw, 48px);
+  font-weight: 900;
+  text-align: center;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+game-quiz label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 12px;
+  font-size: clamp(14px, 2vw, 20px);
+  font-weight: 600;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.1s ease;
+  text-align: center;
+}
+
+game-quiz label:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.02);
+}
+
+game-quiz label:has(input:disabled) {
+  cursor: default;
+  transform: none;
+}
+
+game-quiz label:has(input:disabled):hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  transform: none;
+}
+
+game-quiz label.correct {
+  border-color: #6ee7b7;
+  background: rgba(110, 231, 183, 0.2);
+}
+
+game-quiz label.wrong {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.2);
+}
+
+game-quiz input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}

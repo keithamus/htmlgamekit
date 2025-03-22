@@ -1,0 +1,30 @@
+---
+layout: demo
+title: Flash Demo
+permalink: /demos/flash/
+---
+
+<game-shell id="game" rounds="5" between-delay="500">
+  <div when-some-scene="intro" data-overlay>
+    <h1>Flash Demo</h1>
+    <p>Click the dot. Watch the screen flash green or red.</p>
+    <button commandfor="game" command="--start" autofocus>Start</button>
+  </div>
+
+  <game-flash when-some-scene="playing between paused"></game-flash>
+  <game-timer
+    when-some-scene="playing between paused"
+    duration="4"
+  ></game-timer>
+
+  <div when-some-scene="playing between paused">
+    <demo-target></demo-target>
+  </div>
+
+  <div when-some-scene="result" data-overlay>
+    <h1>Done!</h1>
+    <game-result-stat label="Score"></game-result-stat>
+    <button commandfor="game" command="--restart" autofocus>Again</button>
+  </div>
+</game-shell>
+<script type="module" src="{{ site.baseurl }}/demos/demo-init.js"></script>

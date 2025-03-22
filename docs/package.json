@@ -1,0 +1,26 @@
+{
+  "name": "htmlgamekit-docs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "cem": "npm run cem --prefix ..",
+    "prebuild": "npm run cem",
+    "build": "eleventy",
+    "prestart": "npm run cem",
+    "start": "eleventy --serve"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^3.0.0",
+    "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.0",
+    "cssnano": "^7.0.6",
+    "esbuild": "^0.27.3",
+    "glob": "^11.0.0",
+    "markdown-it-anchor": "^9.2.0",
+    "open-props": "^1.5.8",
+    "openswatch": "^0.1.0",
+    "postcss": "^8.5.3",
+    "postcss-combine-duplicated-selectors": "^10.0.3",
+    "postcss-import": "^16.1.0",
+    "postcss-preset-env": "^11.2.0"
+  }
+}

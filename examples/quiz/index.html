@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Capital Quiz - HTMLGameKit Example</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "signal-polyfill": "../../node_modules/signal-polyfill/dist/index.js"
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="../../src/game-base.css" />
+  </head>
+  <body>
+    <game-shell
+      id="game"
+      game-id="capital-quiz"
+      storage-key="capital-quiz"
+      rounds="15"
+      score-order="desc"
+      between-delay="600"
+      progression="tier"
+      progression-tiers="Easy,Medium,Hard,Expert"
+      progression-promote-after="2"
+    >
+      <div when-some-scene="intro" data-overlay>
+        <h1>Capital Quiz</h1>
+        <p>
+          Name the capital city. Get two right in a row to level up. Get one
+          wrong and you drop back down. 15 rounds.
+        </p>
+        <button commandfor="game" command="--start">Start</button>
+      </div>
+
+      <div when-some-scene="playing between paused">
+        <game-round-counter></game-round-counter>
+        <game-stat key="tier" format="plain">Tier</game-stat>
+        <game-stat key="streak" format="plain">Streak</game-stat>
+      </div>
+
+      <game-timer
+        when-some-scene="playing between paused"
+        duration="10"
+      ></game-timer>
+      <game-toast
+        when-some-scene="playing between paused"
+        trigger="pass"
+      ></game-toast>
+      <game-toast
+        when-some-scene="playing between paused"
+        trigger="fail"
+      ></game-toast>
+
+      <div when-some-scene="playing between paused">
+        <game-quiz>
+          <!-- Easy (tier 0) -->
+          <fieldset data-tier="0">
+            <legend>What is the capital of France?</legend>
+            <label
+              ><input type="radio" name="q" value="Paris" data-correct />
+              Paris</label
+            >
+            <label><input type="radio" name="q" value="Lyon" /> Lyon</label>
+            <label
+              ><input type="radio" name="q" value="Marseille" />
+              Marseille</label
+            >
+            <label><input type="radio" name="q" value="Nice" /> Nice</label>
+          </fieldset>
+          <fieldset data-tier="0">
+            <legend>What is the capital of Japan?</legend>
+            <label
+              ><input type="radio" name="q" value="Tokyo" data-correct />
+              Tokyo</label
+            >
+            <label><input type="radio" name="q" value="Osaka" /> Osaka</label>
+            <label><input type="radio" name="q" value="Kyoto" /> Kyoto</label>
+            <label
+              ><input type="radio" name="q" value="Hiroshima" />
+              Hiroshima</label
+            >
+          </fieldset>
+          <fieldset data-tier="0">
+            <legend>What is the capital of Australia?</legend>
+            <label
+              ><input type="radio" name="q" value="Canberra" data-correct />
+              Canberra</label
+            >
+            <label><input type="radio" name="q" value="Sydney" /> Sydney</label>
+            <label
+              ><input type="radio" name="q" value="Melbourne" />
+              Melbourne</label
+            >
+            <label
+              ><input type="radio" name="q" value="Brisbane" /> Brisbane</label
+            >
+          </fieldset>
+          <fieldset data-tier="0">
+            <legend>What is the capital of Brazil?</legend>
+            <label
+              ><input type="radio" name="q" value="Brasilia" data-correct />
+              Brasilia</label
+            >
+            <label
+              ><input type="radio" name="q" value="Rio de Janeiro" /> Rio de
+              Janeiro</label
+            >
+            <label
+              ><input type="radio" name="q" value="Sao Paulo" /> Sao
+              Paulo</label
+            >
+            <label
+              ><input type="radio" name="q" value="Salvador" /> Salvador</label
+            >
+          </fieldset>
+          <fieldset data-tier="0">
+            <legend>What is the capital of Canada?</legend>
+            <label
+              ><input type="radio" name="q" value="Ottawa" data-correct />
+              Ottawa</label
+            >
+            <label
+              ><input type="radio" name="q" value="Toronto" /> Toronto</label
+            >
+            <label
+              ><input type="radio" name="q" value="Vancouver" />
+              Vancouver</label
+            >
+            <label
+              ><input type="radio" name="q" value="Montreal" /> Montreal</label
+            >
+          </fieldset>
+          <fieldset data-tier="0">
+            <legend>What is the capital of Germany?</legend>
+            <label
+              ><input type="radio" name="q" value="Berlin" data-correct />
+              Berlin</label
+            >
+            <label><input type="radio" name="q" value="Munich" /> Munich</label>
+            <label
+              ><input type="radio" name="q" value="Hamburg" /> Hamburg</label
+            >
+            <label
+              ><input type="radio" name="q" value="Frankfurt" />
+              Frankfurt</label
+            >
+          </fieldset>
+          <fieldset data-tier="0">
+            <legend>What is the capital of India?</legend>
+            <label
+              ><input type="radio" name="q" value="New Delhi" data-correct />
+              New Delhi</label
+            >
+            <label><input type="radio" name="q" value="Mumbai" /> Mumbai</label>
+            <label
+              ><input type="radio" name="q" value="Bangalore" />
+              Bangalore</label
+            >
+            <label
+              ><input type="radio" name="q" value="Chennai" /> Chennai</label
+            >
+          </fieldset>
+          <fieldset data-tier="0">
+            <legend>What is the capital of China?</legend>
+            <label
+              ><input type="radio" name="q" value="Beijing" data-correct />
+              Beijing</label
+            >
+            <label
+              ><input type="radio" name="q" value="Shanghai" /> Shanghai</label
+            >
+            <label
+              ><input type="radio" name="q" value="Guangzhou" />
+              Guangzhou</label
+            >
+            <label
+              ><input type="radio" name="q" value="Shenzhen" /> Shenzhen</label
+            >
+          </fieldset>
+          <fieldset data-tier="0">
+            <legend>What is the capital of Italy?</legend>
+            <label
+              ><input type="radio" name="q" value="Rome" data-correct />
+              Rome</label
+            >
+            <label><input type="radio" name="q" value="Milan" /> Milan</label>
+            <label><input type="radio" name="q" value="Venice" /> Venice</label>
+            <label
+              ><input type="radio" name="q" value="Florence" /> Florence</label
+            >
+          </fieldset>
+          <fieldset data-tier="0">
+            <legend>What is the capital of Egypt?</legend>
+            <label
+              ><input type="radio" name="q" value="Cairo" data-correct />
+              Cairo</label
+            >
+            <label
+              ><input type="radio" name="q" value="Alexandria" />
+              Alexandria</label
+            >
+            <label><input type="radio" name="q" value="Luxor" /> Luxor</label>
+            <label><input type="radio" name="q" value="Giza" /> Giza</label>
+          </fieldset>
+
+          <!-- Medium (tier 1) -->
+          <fieldset data-tier="1">
+            <legend>What is the capital of Turkey?</legend>
+            <label
+              ><input type="radio" name="q" value="Ankara" data-correct />
+              Ankara</label
+            >
+            <label
+              ><input type="radio" name="q" value="Istanbul" /> Istanbul</label
+            >
+            <label><input type="radio" name="q" value="Izmir" /> Izmir</label>
+            <label
+              ><input type="radio" name="q" value="Antalya" /> Antalya</label
+            >
+          </fieldset>
+          <fieldset data-tier="1">
+            <legend>What is the capital of Switzerland?</legend>
+            <label
+              ><input type="radio" name="q" value="Bern" data-correct />
+              Bern</label
+            >
+            <label><input type="radio" name="q" value="Zurich" /> Zurich</label>
+            <label><input type="radio" name="q" value="Geneva" /> Geneva</label>
+            <label><input type="radio" name="q" value="Basel" /> Basel</label>
+          </fieldset>
+          <fieldset data-tier="1">
+            <legend>What is the capital of Morocco?</legend>
+            <label
+              ><input type="radio" name="q" value="Rabat" data-correct />
+              Rabat</label
+            >
+            <label
+              ><input type="radio" name="q" value="Casablanca" />
+              Casablanca</label
+            >
+            <label
+              ><input type="radio" name="q" value="Marrakech" />
+              Marrakech</label
+            >
+            <label><input type="radio" name="q" value="Fez" /> Fez</label>
+          </fieldset>
+          <fieldset data-tier="1">
+            <legend>What is the capital of New Zealand?</legend>
+            <label
+              ><input type="radio" name="q" value="Wellington" data-correct />
+              Wellington</label
+            >
+            <label
+              ><input type="radio" name="q" value="Auckland" /> Auckland</label
+            >
+            <label
+              ><input type="radio" name="q" value="Christchurch" />
+              Christchurch</label
+            >
+            <label
+              ><input type="radio" name="q" value="Hamilton" /> Hamilton</label
+            >
+          </fieldset>
+          <fieldset data-tier="1">
+            <legend>What is the capital of Vietnam?</legend>
+            <label
+              ><input type="radio" name="q" value="Hanoi" data-correct />
+              Hanoi</label
+            >
+            <label
+              ><input type="radio" name="q" value="Ho Chi Minh City" /> Ho Chi
+              Minh City</label
+            >
+            <label
+              ><input type="radio" name="q" value="Da Nang" /> Da Nang</label
+            >
+            <label><input type="radio" name="q" value="Hue" /> Hue</label>
+          </fieldset>
+          <fieldset data-tier="1">
+            <legend>What is the capital of Nigeria?</legend>
+            <label
+              ><input type="radio" name="q" value="Abuja" data-correct />
+              Abuja</label
+            >
+            <label><input type="radio" name="q" value="Lagos" /> Lagos</label>
+            <label><input type="radio" name="q" value="Kano" /> Kano</label>
+            <label><input type="radio" name="q" value="Ibadan" /> Ibadan</label>
+          </fieldset>
+          <fieldset data-tier="1">
+            <legend>What is the capital of South Africa?</legend>
+            <label
+              ><input type="radio" name="q" value="Pretoria" data-correct />
+              Pretoria</label
+            >
+            <label
+              ><input type="radio" name="q" value="Cape Town" /> Cape
+              Town</label
+            >
+            <label
+              ><input type="radio" name="q" value="Johannesburg" />
+              Johannesburg</label
+            >
+            <label><input type="radio" name="q" value="Durban" /> Durban</label>
+          </fieldset>
+          <fieldset data-tier="1">
+            <legend>What is the capital of Myanmar?</legend>
+            <label
+              ><input type="radio" name="q" value="Naypyidaw" data-correct />
+              Naypyidaw</label
+            >
+            <label><input type="radio" name="q" value="Yangon" /> Yangon</label>
+            <label
+              ><input type="radio" name="q" value="Mandalay" /> Mandalay</label
+            >
+            <label><input type="radio" name="q" value="Bagan" /> Bagan</label>
+          </fieldset>
+
+          <!-- Hard (tier 2) -->
+          <fieldset data-tier="2">
+            <legend>What is the capital of Ivory Coast?</legend>
+            <label
+              ><input type="radio" name="q" value="Yamoussoukro" data-correct />
+              Yamoussoukro</label
+            >
+            <label
+              ><input type="radio" name="q" value="Abidjan" /> Abidjan</label
+            >
+            <label><input type="radio" name="q" value="Bouake" /> Bouake</label>
+            <label><input type="radio" name="q" value="Daloa" /> Daloa</label>
+          </fieldset>
+          <fieldset data-tier="2">
+            <legend>What is the capital of Kazakhstan?</legend>
+            <label
+              ><input type="radio" name="q" value="Astana" data-correct />
+              Astana</label
+            >
+            <label><input type="radio" name="q" value="Almaty" /> Almaty</label>
+            <label
+              ><input type="radio" name="q" value="Shymkent" /> Shymkent</label
+            >
+            <label
+              ><input type="radio" name="q" value="Karaganda" />
+              Karaganda</label
+            >
+          </fieldset>
+          <fieldset data-tier="2">
+            <legend>What is the capital of Sri Lanka?</legend>
+            <label
+              ><input
+                type="radio"
+                name="q"
+                value="Sri Jayawardenepura Kotte"
+                data-correct
+              />
+              Sri Jayawardenepura Kotte</label
+            >
+            <label
+              ><input type="radio" name="q" value="Colombo" /> Colombo</label
+            >
+            <label><input type="radio" name="q" value="Kandy" /> Kandy</label>
+            <label><input type="radio" name="q" value="Galle" /> Galle</label>
+          </fieldset>
+          <fieldset data-tier="2">
+            <legend>What is the capital of Belize?</legend>
+            <label
+              ><input type="radio" name="q" value="Belmopan" data-correct />
+              Belmopan</label
+            >
+            <label
+              ><input type="radio" name="q" value="Belize City" /> Belize
+              City</label
+            >
+            <label
+              ><input type="radio" name="q" value="San Ignacio" /> San
+              Ignacio</label
+            >
+            <label
+              ><input type="radio" name="q" value="Orange Walk" /> Orange
+              Walk</label
+            >
+          </fieldset>
+          <fieldset data-tier="2">
+            <legend>What is the capital of Bolivia?</legend>
+            <label
+              ><input type="radio" name="q" value="Sucre" data-correct />
+              Sucre</label
+            >
+            <label><input type="radio" name="q" value="La Paz" /> La Paz</label>
+            <label
+              ><input type="radio" name="q" value="Santa Cruz" /> Santa
+              Cruz</label
+            >
+            <label
+              ><input type="radio" name="q" value="Cochabamba" />
+              Cochabamba</label
+            >
+          </fieldset>
+          <fieldset data-tier="2">
+            <legend>What is the capital of Montenegro?</legend>
+            <label
+              ><input type="radio" name="q" value="Podgorica" data-correct />
+              Podgorica</label
+            >
+            <label><input type="radio" name="q" value="Budva" /> Budva</label>
+            <label><input type="radio" name="q" value="Kotor" /> Kotor</label>
+            <label
+              ><input type="radio" name="q" value="Herceg Novi" /> Herceg
+              Novi</label
+            >
+          </fieldset>
+
+          <!-- Expert (tier 3) -->
+          <fieldset data-tier="3">
+            <legend>What is the capital of Tuvalu?</legend>
+            <label
+              ><input type="radio" name="q" value="Funafuti" data-correct />
+              Funafuti</label
+            >
+            <label
+              ><input type="radio" name="q" value="Nanumea" /> Nanumea</label
+            >
+            <label><input type="radio" name="q" value="Nui" /> Nui</label>
+            <label
+              ><input type="radio" name="q" value="Vaitupu" /> Vaitupu</label
+            >
+          </fieldset>
+          <fieldset data-tier="3">
+            <legend>What is the capital of Eswatini?</legend>
+            <label
+              ><input type="radio" name="q" value="Mbabane" data-correct />
+              Mbabane</label
+            >
+            <label
+              ><input type="radio" name="q" value="Manzini" /> Manzini</label
+            >
+            <label
+              ><input type="radio" name="q" value="Lobamba" /> Lobamba</label
+            >
+            <label><input type="radio" name="q" value="Siteki" /> Siteki</label>
+          </fieldset>
+          <fieldset data-tier="3">
+            <legend>What is the capital of Comoros?</legend>
+            <label
+              ><input type="radio" name="q" value="Moroni" data-correct />
+              Moroni</label
+            >
+            <label
+              ><input type="radio" name="q" value="Mutsamudu" />
+              Mutsamudu</label
+            >
+            <label
+              ><input type="radio" name="q" value="Fomboni" /> Fomboni</label
+            >
+            <label><input type="radio" name="q" value="Domoni" /> Domoni</label>
+          </fieldset>
+          <fieldset data-tier="3">
+            <legend>What is the capital of Bhutan?</legend>
+            <label
+              ><input type="radio" name="q" value="Thimphu" data-correct />
+              Thimphu</label
+            >
+            <label
+              ><input type="radio" name="q" value="Phuentsholing" />
+              Phuentsholing</label
+            >
+            <label
+              ><input type="radio" name="q" value="Punakha" /> Punakha</label
+            >
+            <label><input type="radio" name="q" value="Paro" /> Paro</label>
+          </fieldset>
+          <fieldset data-tier="3">
+            <legend>What is the capital of Suriname?</legend>
+            <label
+              ><input type="radio" name="q" value="Paramaribo" data-correct />
+              Paramaribo</label
+            >
+            <label
+              ><input type="radio" name="q" value="Lelydorp" /> Lelydorp</label
+            >
+            <label
+              ><input type="radio" name="q" value="Brokopondo" />
+              Brokopondo</label
+            >
+            <label
+              ><input type="radio" name="q" value="Nieuw Nickerie" /> Nieuw
+              Nickerie</label
+            >
+          </fieldset>
+          <fieldset data-tier="3">
+            <legend>What is the capital of Lesotho?</legend>
+            <label
+              ><input type="radio" name="q" value="Maseru" data-correct />
+              Maseru</label
+            >
+            <label
+              ><input type="radio" name="q" value="Teyateyaneng" />
+              Teyateyaneng</label
+            >
+            <label
+              ><input type="radio" name="q" value="Mafeteng" /> Mafeteng</label
+            >
+            <label><input type="radio" name="q" value="Hlotse" /> Hlotse</label>
+          </fieldset>
+        </game-quiz>
+      </div>
+
+      <div when-some-scene="result" data-overlay>
+        <h1>Results</h1>
+        <game-result-stat label="Score"></game-result-stat>
+        <game-result-message>
+          <option when-max-score="7">
+            Rough showing. Maybe start with a map of Europe and work outward.
+          </option>
+          <option when-max-score="7">
+            Geography is not your strong suit. Yet.
+          </option>
+          <option when-min-score="8" when-max-score="10">
+            Not bad. You know the big ones at least.
+          </option>
+          <option when-min-score="8" when-max-score="10">
+            Decent. You won't get lost in Europe, probably.
+          </option>
+          <option when-min-score="11" when-max-score="13">
+            Solid knowledge. You've been paying attention.
+          </option>
+          <option when-min-score="11" when-max-score="13">
+            Impressive. Your pub quiz team is lucky to have you.
+          </option>
+          <option when-min-score="14">
+            Geography expert. You clearly own a globe.
+          </option>
+          <option when-min-score="14">Flawless. Are you a diplomat?</option>
+        </game-result-message>
+        <div
+          style="
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 24px;
+          "
+        >
+          <game-share></game-share>
+          <button commandfor="game" command="--restart">Play again</button>
+        </div>
+      </div>
+    </game-shell>
+
+    <script type="module" src="../../src/auto.js"></script>
+  </body>
+</html>
