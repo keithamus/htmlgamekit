@@ -1,9 +1,37 @@
+// iOS maps audio session type to AVAudioSession category. Default "ambient"
+// is muted by the silent switch while "playback" is not.
+if ("audioSession" in navigator) navigator.audioSession.type = "playback";
+
+// Prefix fallback for older Safari/WebKit.
+const AudioCtor = window.AudioContext ?? window.webkitAudioContext;
 let sharedCtx = null;
 
 export function getAudioCtx() {
-  if (!sharedCtx) sharedCtx = new AudioContext();
+  if (!sharedCtx) sharedCtx = new AudioCtor();
   if (sharedCtx.state === "suspended") sharedCtx.resume();
   return sharedCtx;
+}
+
+// iOS Safari suspends AudioContext until a synchronous user-gesture call.
+// Pre-warm on first pointer interaction so audio is unlocked before the
+// first game sound fires (which arrives via async signal propagation).
+function _unlock() {
+  const ctx = getAudioCtx();
+  ctx.resume();
+  // Silent 1-sample buffer: the classic iOS AudioContext unlock trick.
+  const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(ctx.destination);
+  src.start(0);
+}
+
+for (const type of ["touchstart", "pointerdown", "mousemove"]) {
+  document.addEventListener(type, _unlock, {
+    once: true,
+    capture: true,
+    passive: true,
+  });
 }
 
 export function synthMarimba(ctx, freq, when, gain, duration = 0.5) {
