@@ -895,17 +895,21 @@ export default class GameShell extends HTMLElement {
       this.difficulty.set(result.difficulty);
       if (result.done) {
         clearTimeout(this.#betweenTimer);
-        if (this.#progression.computeThreshold) {
-          this.score.set(
-            Math.round(this.#progression.computeThreshold() * this.scoreScale),
-          );
-        }
-        this.scene.set("result");
+        this.#betweenTimer = setTimeout(() => {
+          if (this.#progression.computeThreshold) {
+            this.score.set(
+              Math.round(this.#progression.computeThreshold() * this.scoreScale),
+            );
+          }
+          this.scene.set("result");
+        }, this.betweenDelay.get());
         return;
       }
     } else if (this.rounds.get() && this.round.get() >= this.rounds.get()) {
       clearTimeout(this.#betweenTimer);
-      this.scene.set("result");
+      this.#betweenTimer = setTimeout(() => {
+        this.scene.set("result");
+      }, this.betweenDelay.get());
       return;
     }
 
