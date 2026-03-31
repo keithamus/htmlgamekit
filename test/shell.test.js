@@ -157,6 +157,7 @@ describe("GameShell", () => {
       await settle();
       assert.equal(shell.round.get(), 2);
       shell.dispatchEvent(new GameRoundPassEvent(10));
+      await settle();
       assert.equal(shell.scene.get(), "result");
       assert.equal(shell.score.get(), 20);
     });

@@ -281,7 +281,7 @@ describe("game-shell red-team", () => {
     shell1.start();
     await microtask();
     shell1.dispatchEvent(new GameRoundPassEvent(42));
-    await microtask();
+    await tick();
     assert.equal(shell1.scene.get(), "result");
     const stored = localStorage.getItem("");
     assert.isNotNull(stored, "result stored under empty-string key");
