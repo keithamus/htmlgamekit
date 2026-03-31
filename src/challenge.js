@@ -14,8 +14,8 @@ const TAUNTS = [
   "No mercy.",
   "Beat it or live in their shadow forever.",
   "They're watching. Probably.",
-  "Lower is better. No pressure.",
-  "That's the bar. Limbo under it.",
+  "Time to show them up. No pressure.",
+  "That's their best. Embarrass them.",
   "They set the pace. You set the standard.",
   "An insulting score. You can do better.",
 ];
