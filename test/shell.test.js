@@ -403,4 +403,61 @@ describe("GameShell", () => {
       assert.isFalse(shell.hasInCollection("inventory", "shield"));
     });
   });
+
+  describe("group via ?newgroup=", () => {
+    let originalFetch;
+
+    beforeEach(() => {
+      originalFetch = window.fetch;
+    });
+
+    afterEach(() => {
+      window.fetch = originalFetch;
+    });
+
+    it("creates a group and replaces the URL with ?g=<id>", async () => {
+      window.fetch = (url, opts) => {
+        if (url.endsWith("/g") && opts?.method === "POST") {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ id: "grp-abc123" }),
+          });
+        }
+        return Promise.resolve({ ok: false });
+      };
+
+      history.replaceState(null, "", `${location.pathname}?newgroup=TestGroup`);
+      const shell = await createShell(
+        'rounds="3" between-delay="0" group game-id="test-grp" score-url="https://example.com" storage-key="test-grp"',
+      );
+
+      assert.equal(shell.groupName.get(), "TestGroup");
+      assert.equal(shell.groupId.get(), "grp-abc123");
+
+      const params = new URLSearchParams(location.search);
+      assert.equal(params.get("g"), "grp-abc123");
+      assert.isNull(params.get("newgroup"));
+    });
+
+    it("persists group to localStorage", async () => {
+      window.fetch = (url, opts) => {
+        if (url.endsWith("/g") && opts?.method === "POST") {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ id: "grp-stored" }),
+          });
+        }
+        return Promise.resolve({ ok: false });
+      };
+
+      history.replaceState(null, "", `${location.pathname}?newgroup=Stored`);
+      await createShell(
+        'rounds="3" between-delay="0" group game-id="test-grp-ls" score-url="https://example.com" storage-key="test-grp-ls"',
+      );
+
+      const saved = JSON.parse(localStorage.getItem("test-grp-ls-group"));
+      assert.equal(saved.id, "grp-stored");
+      assert.equal(saved.name, "Stored");
+    });
+  });
 });

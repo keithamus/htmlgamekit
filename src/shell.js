@@ -83,12 +83,9 @@ async function initGroup(scores, storageKey = "game-group") {
       });
       const p = new URLSearchParams(location.search);
       p.delete("newgroup");
+      p.set("g", group.id);
       const clean = p.toString();
-      history.replaceState(
-        null,
-        "",
-        clean ? `${location.pathname}?${clean}` : location.pathname,
-      );
+      history.replaceState(null, "", `${location.pathname}?${clean}`);
       return { id: group.id, name: newGroupName };
     }
   }
