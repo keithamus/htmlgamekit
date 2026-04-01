@@ -344,4 +344,63 @@ describe("GameShell", () => {
       assert.equal(el.scoreOrderAttr, "asc");
     });
   });
+
+  describe("command --stat", () => {
+    it("sets a stat from button value", async () => {
+      document.body.innerHTML = `
+        <game-shell game-id="cmd-stat" rounds="1">
+          <button id="btn" commandfor="cmd-stat-shell" command="--stat" value="room:reception">Go</button>
+        </game-shell>
+      `;
+      const shell = document.querySelector("game-shell");
+      shell.id = "cmd-stat-shell";
+      await settle();
+
+      shell.dispatchEvent(
+        new CommandEvent("command", {
+          command: "--stat",
+          source: document.getElementById("btn"),
+        }),
+      );
+      assert.equal(shell.stats.get().room, "reception");
+    });
+
+    it("preserves existing stats when setting a new one", async () => {
+      const shell = await createShell('game-id="cmd-stat-merge" rounds="1"');
+      shell.stats.set({ existing: "yes" });
+
+      const btn = document.createElement("button");
+      btn.value = "room:lobby";
+      shell.dispatchEvent(
+        new CommandEvent("command", { command: "--stat", source: btn }),
+      );
+      assert.equal(shell.stats.get().existing, "yes");
+      assert.equal(shell.stats.get().room, "lobby");
+    });
+  });
+
+  describe("command --collect / --uncollect", () => {
+    it("--collect adds to a collection", async () => {
+      const shell = await createShell('game-id="cmd-collect" rounds="1"');
+      const btn = document.createElement("button");
+      btn.value = "inventory:sword";
+      shell.dispatchEvent(
+        new CommandEvent("command", { command: "--collect", source: btn }),
+      );
+      assert.isTrue(shell.hasInCollection("inventory", "sword"));
+    });
+
+    it("--uncollect removes from a collection", async () => {
+      const shell = await createShell('game-id="cmd-uncollect" rounds="1"');
+      shell.addToCollection("inventory", "shield");
+      assert.isTrue(shell.hasInCollection("inventory", "shield"));
+
+      const btn = document.createElement("button");
+      btn.value = "inventory:shield";
+      shell.dispatchEvent(
+        new CommandEvent("command", { command: "--uncollect", source: btn }),
+      );
+      assert.isFalse(shell.hasInCollection("inventory", "shield"));
+    });
+  });
 });

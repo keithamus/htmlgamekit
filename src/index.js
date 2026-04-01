@@ -24,6 +24,8 @@ export {
   GamePreferenceChangeEvent,
 } from "./preferences.js";
 export { default as GameWordSource, gameWordContext } from "./words.js";
+export { default as GameDebug } from "./debug.js";
+export { default as GamePassage } from "./passage.js";
 export { default as FixedProgression } from "./progressions/fixed.js";
 export { default as StaircaseProgression } from "./progressions/staircase.js";
 export { default as TierProgression } from "./progressions/tier.js";
@@ -45,6 +47,8 @@ export {
   GamePracticeStartEvent,
   GameTileInputEvent,
   GameTileSubmitEvent,
+  GameCollectionAddEvent,
+  GameCollectionRemoveEvent,
 } from "./events.js";
 
 export { PendingTaskEvent } from "./pending-task.js";
@@ -90,6 +94,8 @@ import GameToast from "./toast.js";
 import GameTrophy from "./trophy.js";
 import GamePreferences, { GamePreference } from "./preferences.js";
 import GameWordSource from "./words.js";
+import GameDebug from "./debug.js";
+import GamePassage from "./passage.js";
 
 export function defineAll(registry = customElements) {
   GameShell.define("game-shell", registry);
@@ -117,4 +123,6 @@ export function defineAll(registry = customElements) {
   GamePreferences.define("game-preferences", registry);
   GamePreference.define("game-preference", registry);
   GameWordSource.define("game-word-source", registry);
+  GameDebug.define("game-debug", registry);
+  GamePassage.define("game-passage", registry);
 }

@@ -21,11 +21,16 @@
  *   when-no-trophy="id"        -- none of the listed trophies are unlocked
  *   when-all-trophy="ida idb"  -- all of the listed trophies are unlocked
  *
+ * Collection checks work the same way for any registered collection:
+ *   when-some-inventory="sword" -- "sword" is in the "inventory" collection
+ *   when-no-visited="cellar"    -- "cellar" is not in the "visited" collection
+ *   when-all-flags="key lamp"   -- both "key" and "lamp" are in "flags"
+ *
  * Scene values support the "intro" alias, which expands to {init, demo, ready}.
  *
  * Key resolution: after the operator is stripped, the remaining kebab-case
  * string is camelCased. So `when-min-pass-streak` → operator `min`, key `passStreak`.
- * Resolution order: shell signals > round scores > trophy count > difficulty > stats.
+ * Resolution order: shell signals > round scores > trophy count > collections > difficulty > stats.
  */
 
 import { camelCase } from "./component.js";
@@ -67,6 +72,16 @@ export function resolve(key, shell) {
   return undefined;
 }
 
+function isCollection(key, shell) {
+  if (key === "trophy") return true;
+  return shell.isCollection?.(key) ?? false;
+}
+
+function hasInSet(key, id, shell) {
+  if (key === "trophy") return shell.isTrophyUnlocked(id);
+  return shell.hasInCollection?.(key, id) ?? false;
+}
+
 export function matchesConditions(el, shell) {
   for (const attr of el.attributes) {
     if (!attr.name.startsWith("when-")) continue;
@@ -92,9 +107,9 @@ export function matchesConditions(el, shell) {
       if (String(resolve(key, shell) ?? "") !== val) return false;
     } else if (rest.startsWith("no-")) {
       const key = camelCase(rest.slice(3));
-      if (key === "trophy") {
+      if (key === "trophy" || isCollection(key, shell)) {
         const ids = val.trim().split(/\s+/);
-        if (ids.some((id) => shell.isTrophyUnlocked(id))) return false;
+        if (ids.some((id) => hasInSet(key, id, shell))) return false;
       } else if (val) {
         const cur = String(resolve(key, shell) ?? "");
         const set =
@@ -105,9 +120,9 @@ export function matchesConditions(el, shell) {
       }
     } else if (rest.startsWith("some-")) {
       const key = camelCase(rest.slice(5));
-      if (key === "trophy") {
+      if (key === "trophy" || isCollection(key, shell)) {
         const ids = val.trim().split(/\s+/);
-        if (!ids.some((id) => shell.isTrophyUnlocked(id))) return false;
+        if (!ids.some((id) => hasInSet(key, id, shell))) return false;
       } else if (val) {
         const cur = String(resolve(key, shell) ?? "");
         const set =
@@ -118,9 +133,9 @@ export function matchesConditions(el, shell) {
       }
     } else if (rest.startsWith("all-")) {
       const key = camelCase(rest.slice(4));
-      if (key === "trophy") {
+      if (key === "trophy" || isCollection(key, shell)) {
         const ids = val.trim().split(/\s+/);
-        if (!ids.every((id) => shell.isTrophyUnlocked(id))) return false;
+        if (!ids.every((id) => hasInSet(key, id, shell))) return false;
       } else {
         const cur = String(resolve(key, shell) ?? "");
         const set =

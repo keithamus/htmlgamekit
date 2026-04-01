@@ -117,3 +117,19 @@ export class GameTileSubmitEvent extends Event {
     this.value = value;
   }
 }
+
+export class GameCollectionAddEvent extends Event {
+  constructor(collection, itemId) {
+    super("game-collection-add", OPTS);
+    this.collection = collection;
+    this.itemId = itemId;
+  }
+}
+
+export class GameCollectionRemoveEvent extends Event {
+  constructor(collection, itemId) {
+    super("game-collection-remove", OPTS);
+    this.collection = collection;
+    this.itemId = itemId;
+  }
+}

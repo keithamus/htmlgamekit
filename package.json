@@ -62,6 +62,8 @@
     "./conditions": "./src/conditions.js",
     "./triggers": "./src/triggers.js",
     "./signals": "./src/signals.js",
+    "./debug": "./src/debug.js",
+    "./passage": "./src/passage.js",
     "./game-base.css": "./src/game-base.css"
   },
   "main": "./src/index.js",

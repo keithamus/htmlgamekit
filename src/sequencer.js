@@ -34,7 +34,8 @@ export default class GameSequencer extends GameComponent {
   #humGain = null;
 
   effectCallback({ scene }) {
-    if (scene.get() === "playing") {
+    const s = scene.get();
+    if (s === "playing" || s === "between") {
       if (!this.#scheduler && !this.#humOsc) this.start();
     } else {
       this.stop();

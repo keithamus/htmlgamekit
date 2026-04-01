@@ -195,6 +195,7 @@ export default class GameShell extends HTMLElement {
     "storage-key": { type: "string?", prop: "storageKeyAttr" },
     "sprite-sheet": { type: "string?", prop: "spriteSheetAttr" },
     "session-save": { type: "boolean" },
+    "save-stats": { type: "boolean" },
     demo: { type: "boolean" },
     group: { type: "string?" },
     progression: { type: "string?" },
@@ -254,6 +255,7 @@ export default class GameShell extends HTMLElement {
 
   #trophyUnlocked = new Set();
   #trophyStorageKey = "";
+  #collections = new Map();
   #abort = null;
   #effectDisposers = [];
 
@@ -476,6 +478,118 @@ export default class GameShell extends HTMLElement {
     return this.#trophyUnlocked.size;
   }
 
+  /**
+   * Add an item to a named collection. Collections are generic sets of
+   * string IDs, persisted to localStorage. Use for inventory, visited
+   * rooms, story flags, achievements, etc.
+   *
+   * @param {string} name - Collection name (e.g. "inventory", "visited")
+   * @param {string} id - Item ID to add
+   * @returns {boolean} true if the item was newly added, false if already present
+   */
+  addToCollection(name, id) {
+    let set = this.#collections.get(name);
+    if (!set) {
+      set = new Set();
+      this.#collections.set(name, set);
+    }
+    if (set.has(id)) return false;
+    set.add(id);
+    this.#saveCollection(name);
+    return true;
+  }
+
+  /**
+   * Remove an item from a named collection.
+   *
+   * @param {string} name - Collection name
+   * @param {string} id - Item ID to remove
+   * @returns {boolean} true if the item was present and removed
+   */
+  removeFromCollection(name, id) {
+    const set = this.#collections.get(name);
+    if (!set?.has(id)) return false;
+    set.delete(id);
+    this.#saveCollection(name);
+    return true;
+  }
+
+  /**
+   * Check if an item exists in a named collection.
+   *
+   * @param {string} name - Collection name
+   * @param {string} id - Item ID to check
+   * @returns {boolean}
+   */
+  hasInCollection(name, id) {
+    return this.#collections.get(name)?.has(id) ?? false;
+  }
+
+  /**
+   * Get the number of items in a named collection.
+   *
+   * @param {string} name - Collection name
+   * @returns {number}
+   */
+  collectionSize(name) {
+    return this.#collections.get(name)?.size ?? 0;
+  }
+
+  /**
+   * Get all item IDs in a named collection.
+   *
+   * @param {string} name - Collection name
+   * @returns {string[]}
+   */
+  collectionEntries(name) {
+    const set = this.#collections.get(name);
+    return set ? [...set] : [];
+  }
+
+  /**
+   * Clear all items from a named collection.
+   *
+   * @param {string} name - Collection name
+   */
+  clearCollection(name) {
+    const set = this.#collections.get(name);
+    if (set) {
+      set.clear();
+      this.#saveCollection(name);
+    }
+  }
+
+  /**
+   * Check whether a named collection has been registered (even if empty).
+   * Used by the condition system to distinguish collection keys from
+   * signal/stat keys.
+   *
+   * @param {string} name - Collection name
+   * @returns {boolean}
+   */
+  isCollection(name) {
+    return this.#collections.has(name);
+  }
+
+  #saveCollection(name) {
+    const set = this.#collections.get(name);
+    const key = `${this.storageKey.get()}-collection-${name}`;
+    if (set?.size) {
+      storagePutJson(localStorage, key, [...set]);
+    } else {
+      storageRemove(localStorage, key);
+    }
+  }
+
+  #loadCollection(name) {
+    const key = `${this.storageKey.get()}-collection-${name}`;
+    const arr = storageGetJson(localStorage, key);
+    if (Array.isArray(arr) && arr.length) {
+      const set = new Set(arr);
+      this.#collections.set(name, set);
+    }
+  }
+
   connectedCallback() {
     this.storageKey.set(this.storageKeyAttr || this.gameIdAttr || "");
     this.gameId.set(this.gameIdAttr);
@@ -490,6 +604,13 @@ export default class GameShell extends HTMLElement {
     this.#trophyStorageKey = `${this.storageKey.get()}-trophies`;
     this.#loadTrophies();
 
+    if (this.saveStats) {
+      const saved = storageGetJson(localStorage, `${this.storageKey.get()}-stats`);
+      if (saved && typeof saved === "object") {
+        this.stats.set(saved);
+      }
+    }
+
     this.#abort = new AbortController();
     const { signal } = this.#abort;
 
@@ -500,6 +621,28 @@ export default class GameShell extends HTMLElement {
         if (e.trophyId && !this.#trophyUnlocked.has(e.trophyId)) {
           this.#trophyUnlocked.add(e.trophyId);
           this.#saveTrophies();
+        }
+      },
+      { signal },
+    );
+
+    this.addEventListener(
+      "game-collection-add",
+      (e) => {
+        e.stopPropagation();
+        if (e.collection && e.itemId) {
+          this.addToCollection(e.collection, e.itemId);
+        }
+      },
+      { signal },
+    );
+
+    this.addEventListener(
+      "game-collection-remove",
+      (e) => {
+        e.stopPropagation();
+        if (e.collection && e.itemId) {
+          this.removeFromCollection(e.collection, e.itemId);
         }
       },
       { signal },
@@ -561,6 +704,16 @@ export default class GameShell extends HTMLElement {
         });
       } else if (scene !== "init") {
         storageRemove(sessionStorage, `${sk}-session`);
+      }
+    });
+
+    this.#effect(() => {
+      if (!this.saveStats) return;
+      const sk = this.storageKey.get();
+      if (!sk) return;
+      const s = this.stats.get();
+      if (s && Object.keys(s).length) {
+        storagePutJson(localStorage, `${sk}-stats`, s);
       }
     });
 
@@ -676,6 +829,7 @@ export default class GameShell extends HTMLElement {
     this.addEventListener(
       "command",
       (e) => {
+        const val = e.source?.value ?? "";
         if (e.command === "--start" || e.command === "--restart") {
           this.start();
         } else if (e.command === "--pause") {
@@ -689,6 +843,23 @@ export default class GameShell extends HTMLElement {
             clearTimeout(this.#betweenTimer);
             this.round.set(this.round.get() + 1);
             this.scene.set("playing");
+          }
+        } else if (e.command === "--stat") {
+          const sep = val.indexOf(":");
+          if (sep > 0) {
+            const key = val.slice(0, sep);
+            const v = val.slice(sep + 1);
+            this.stats.set({ ...this.stats.get(), [key]: v });
+          }
+        } else if (e.command === "--collect") {
+          const sep = val.indexOf(":");
+          if (sep > 0) {
+            this.addToCollection(val.slice(0, sep), val.slice(sep + 1));
+          }
+        } else if (e.command === "--uncollect") {
+          const sep = val.indexOf(":");
+          if (sep > 0) {
+            this.removeFromCollection(val.slice(0, sep), val.slice(sep + 1));
           }
         }
       },
@@ -946,6 +1117,7 @@ export default class GameShell extends HTMLElement {
     clearTimeout(this.#betweenTimer);
     const sk = this.storageKey.get();
     storageRemove(localStorage, sk);
+    storageRemove(localStorage, `${sk}-stats`);
     storageRemove(sessionStorage, `${sk}-session`);
     cleanUrl();
     this.encodedResult.set(null);
@@ -966,6 +1138,11 @@ export default class GameShell extends HTMLElement {
       this.difficulty.set(diff);
     }
 
+    // Dispatch "setup" lifecycle event so games can initialise
+    // state (set stats, collections, etc.) before "playing" begins.
+    this.dispatchEvent(
+      new GameLifecycleEvent("setup", this.#stateSnapshot()),
+    );
     this.scene.set("playing");
     this.#scores.fetchToken();
   }
