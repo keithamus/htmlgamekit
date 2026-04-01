@@ -404,7 +404,7 @@ describe("GameShell", () => {
     });
   });
 
-  describe("group via ?newgroup=", () => {
+  describe("group", () => {
     let originalFetch;
 
     beforeEach(() => {
@@ -415,7 +415,7 @@ describe("GameShell", () => {
       window.fetch = originalFetch;
     });
 
-    it("creates a group and replaces the URL with ?g=<id>", async () => {
+    it("?newgroup= creates a group and replaces the URL with ?g=<id>", async () => {
       window.fetch = (url, opts) => {
         if (url.endsWith("/g") && opts?.method === "POST") {
           return Promise.resolve({
@@ -439,7 +439,7 @@ describe("GameShell", () => {
       assert.isNull(params.get("newgroup"));
     });
 
-    it("persists group to localStorage", async () => {
+    it("?newgroup= persists group to localStorage", async () => {
       window.fetch = (url, opts) => {
         if (url.endsWith("/g") && opts?.method === "POST") {
           return Promise.resolve({
@@ -458,6 +458,56 @@ describe("GameShell", () => {
       const saved = JSON.parse(localStorage.getItem("test-grp-ls-group"));
       assert.equal(saved.id, "grp-stored");
       assert.equal(saved.name, "Stored");
+    });
+
+    it("?g= fetches group name from the API", async () => {
+      window.fetch = (url) => {
+        if (url.includes("/g/grp-join1.json")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ game: "Remote Name", scores: [] }),
+          });
+        }
+        return Promise.resolve({ ok: false });
+      };
+
+      history.replaceState(null, "", `${location.pathname}?g=grp-join1`);
+      const shell = await createShell(
+        'rounds="3" between-delay="0" group game-id="test-grp-join" score-url="https://example.com" storage-key="test-grp-join"',
+      );
+
+      assert.equal(shell.groupId.get(), "grp-join1");
+      assert.equal(shell.groupName.get(), "Remote Name");
+
+      const saved = JSON.parse(localStorage.getItem("test-grp-join-group"));
+      assert.equal(saved.name, "Remote Name");
+    });
+
+    it("saved group fetches name from API if missing", async () => {
+      localStorage.setItem(
+        "test-grp-saved-group",
+        JSON.stringify({ id: "grp-saved1", name: "" }),
+      );
+
+      window.fetch = (url) => {
+        if (url.includes("/g/grp-saved1.json")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ game: "Saved Name", scores: [] }),
+          });
+        }
+        return Promise.resolve({ ok: false });
+      };
+
+      const shell = await createShell(
+        'rounds="3" between-delay="0" group game-id="test-grp-saved" score-url="https://example.com" storage-key="test-grp-saved"',
+      );
+
+      assert.equal(shell.groupId.get(), "grp-saved1");
+      assert.equal(shell.groupName.get(), "Saved Name");
+
+      const saved = JSON.parse(localStorage.getItem("test-grp-saved-group"));
+      assert.equal(saved.name, "Saved Name");
     });
   });
 });

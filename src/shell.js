@@ -93,7 +93,11 @@ async function initGroup(scores, storageKey = "game-group") {
   const groupId = params.get("g");
   if (groupId) {
     scores.setGroupId(groupId);
-    const name = params.get("gn") || "";
+    let name = "";
+    if (scores.fetchGroup) {
+      const info = await scores.fetchGroup();
+      if (info?.name) name = info.name;
+    }
     storagePutJson(localStorage, storageKey, { id: groupId, name });
     return { id: groupId, name };
   }
@@ -101,6 +105,13 @@ async function initGroup(scores, storageKey = "game-group") {
   const saved = storageGetJson(localStorage, storageKey);
   if (saved?.id) {
     scores.setGroupId(saved.id);
+    if (!saved.name && scores.fetchGroup) {
+      const info = await scores.fetchGroup();
+      if (info?.name) {
+        saved.name = info.name;
+        storagePutJson(localStorage, storageKey, saved);
+      }
+    }
     return saved;
   }
 

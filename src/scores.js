@@ -12,6 +12,9 @@ export const noopScores = {
   fetchWorst() {
     return null;
   },
+  fetchGroup() {
+    return null;
+  },
   fetchHistogram() {
     return null;
   },
@@ -134,6 +137,17 @@ export default function gameScores(gameId, { baseUrl = "" } = {}) {
     }
   }
 
+  async function fetchGroup() {
+    try {
+      const res = await fetch(`${baseUrl}/g/${id()}.json?limit=0`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return { id: id(), name: data.game || "" };
+    } catch {
+      return null;
+    }
+  }
+
   async function fetchHistogram(buckets = 80) {
     try {
       const res = await fetch(
@@ -152,6 +166,7 @@ export default function gameScores(gameId, { baseUrl = "" } = {}) {
     submitScore,
     fetchBest,
     fetchWorst,
+    fetchGroup,
     fetchHistogram,
     setGroupId,
     createGroup,
