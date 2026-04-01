@@ -509,5 +509,32 @@ describe("GameShell", () => {
       const saved = JSON.parse(localStorage.getItem("test-grp-saved-group"));
       assert.equal(saved.name, "Saved Name");
     });
+
+    it("scopes storageKey to the group id", async () => {
+      window.fetch = (url, opts) => {
+        if (url.endsWith("/g") && opts?.method === "POST") {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ id: "grp-scoped" }),
+          });
+        }
+        return Promise.resolve({ ok: false });
+      };
+
+      history.replaceState(null, "", `${location.pathname}?newgroup=Scoped`);
+      const shell = await createShell(
+        'rounds="3" between-delay="0" group game-id="test-grp-scope" score-url="https://example.com" storage-key="test-grp-scope"',
+      );
+
+      assert.equal(shell.storageKey.get(), "test-grp-scope:grp-scoped");
+    });
+
+    it("solo play does not scope storageKey", async () => {
+      const shell = await createShell(
+        'rounds="3" between-delay="0" game-id="test-solo" storage-key="test-solo"',
+      );
+
+      assert.equal(shell.storageKey.get(), "test-solo");
+    });
   });
 });

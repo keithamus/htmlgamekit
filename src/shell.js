@@ -913,6 +913,7 @@ export default class GameShell extends HTMLElement {
       if (g) {
         this.groupId.set(g.id);
         this.groupName.set(g.name);
+        this.storageKey.set(`${this.storageKey.get()}:${g.id}`);
       }
     }
 
