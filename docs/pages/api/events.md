@@ -51,6 +51,8 @@ Game mechanics communicate with the shell by dispatching custom DOM events. The 
 | `game-tile-input`        | `<game-tile-input>`  | `<game-audio>`            |
 | `game-tile-submit`       | `<game-tile-input>`  | Your game                 |
 | `pending-task`           | Any component        | Shell                     |
+| `game-collection-add`    | Your game / `<game-passage>` | Shell              |
+| `game-collection-remove` | Your game            | Shell                     |
 | `game-preference-change` | `<game-preferences>` | Your entry script         |
 
 ---
@@ -75,6 +77,8 @@ import {
   GamePracticeStartEvent,
   GameTileInputEvent,
   GameTileSubmitEvent,
+  GameCollectionAddEvent,
+  GameCollectionRemoveEvent,
   PendingTaskEvent,
 } from "htmlgamekit";
 
@@ -251,7 +255,9 @@ The shell merges this into the `stats` signal, so any component observing it wil
 
 ## GameLifecycleEvent
 
-Fired by `<game-shell>` on every scene transition. This is the primary event for reacting to game scene changes.
+Fired by `<game-shell>` on every scene transition and at the start of `.start()`. This is the primary event for reacting to game scene changes.
+
+The special `"setup"` action fires synchronously at the start of `.start()` **before** stats are wiped and the scene changes to `"playing"`. Use this to initialise game state (set stats, collections, etc.) on game start/restart. Stats set during `"setup"` survive into the `"playing"` phase.
 
 <dl class="def">
 
@@ -262,13 +268,13 @@ Fired by `<game-shell>` on every scene transition. This is the primary event for
 
 **Parameters:**
 
-- `action` — `string` — The new scene name (e.g. `"playing"`, `"between"`, `"result"`).
+- `action` — `string` — The new scene name (e.g. `"playing"`, `"between"`, `"result"`) or `"setup"`.
 - `state` — `object` — A snapshot of the full game state after the transition.
 
 </dd>
 
 <dt><span class="badge prop">.action</span></dt>
-<dd><code>string</code> — The triggering action.</dd>
+<dd><code>string</code> — The triggering action. Scene names plus the special <code>"setup"</code> value.</dd>
 
 <dt><span class="badge prop">.state</span></dt>
 <dd><code>object</code> — Full state snapshot.</dd>
@@ -280,6 +286,10 @@ Fired by `<game-shell>` on every scene transition. This is the primary event for
 
 ```js
 document.querySelector("game-shell").addEventListener("game-lifecycle", (e) => {
+  if (e.action === "setup") {
+    // Initialise game state before playing begins
+    e.target.addToCollection("visited", "start");
+  }
   if (e.action === "result") {
     console.log("Game over! Final score:", e.state.score);
   }
@@ -555,6 +565,72 @@ tileInput.addEventListener("game-tile-submit", (e) => {
   const guess = e.value.toLowerCase();
   // Validate and process the guess
 });
+```
+
+---
+
+## GameCollectionAddEvent
+
+Signals that an item should be added to a named collection. The shell catches this and calls `addToCollection(collection, itemId)`. Dispatched by `<game-passage>` when it becomes active (to track visits) and can be dispatched by any game mechanic.
+
+<dl class="def">
+
+<dt><span class="badge method">new GameCollectionAddEvent(collection, itemId)</span></dt>
+<dd>
+
+**Event name:** `"game-collection-add"`
+
+**Parameters:**
+
+- `collection` -- `string` -- The collection name (e.g. `"inventory"`, `"visited"`).
+- `itemId` -- `string` -- The item ID to add.
+
+</dd>
+
+<dt><span class="badge prop">.collection</span></dt>
+<dd><code>string</code> -- The collection name.</dd>
+
+<dt><span class="badge prop">.itemId</span></dt>
+<dd><code>string</code> -- The item ID to add.</dd>
+
+</dl>
+
+```js
+// Add "sword" to the "inventory" collection
+this.dispatchEvent(new GameCollectionAddEvent("inventory", "sword"));
+```
+
+---
+
+## GameCollectionRemoveEvent
+
+Signals that an item should be removed from a named collection. The shell catches this and calls `removeFromCollection(collection, itemId)`.
+
+<dl class="def">
+
+<dt><span class="badge method">new GameCollectionRemoveEvent(collection, itemId)</span></dt>
+<dd>
+
+**Event name:** `"game-collection-remove"`
+
+**Parameters:**
+
+- `collection` -- `string` -- The collection name.
+- `itemId` -- `string` -- The item ID to remove.
+
+</dd>
+
+<dt><span class="badge prop">.collection</span></dt>
+<dd><code>string</code> -- The collection name.</dd>
+
+<dt><span class="badge prop">.itemId</span></dt>
+<dd><code>string</code> -- The item ID to remove.</dd>
+
+</dl>
+
+```js
+// Remove "sword" from the "inventory" collection
+this.dispatchEvent(new GameCollectionRemoveEvent("inventory", "sword"));
 ```
 
 ---

@@ -46,6 +46,8 @@ const NAV_ORDER = [
   "game-audio",
   "game-sample",
   "game-sequencer",
+  "game-passage",
+  "game-debug",
 ];
 
 function defaultTitle(tag) {

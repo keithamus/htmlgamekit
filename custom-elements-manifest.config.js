@@ -32,6 +32,8 @@ const TAG_MAP = {
   GamePreference: "game-preference",
   GameScoreHistogram: "game-score-histogram",
   GameWordSource: "game-word-source",
+  GameDebug: "game-debug",
+  GamePassage: "game-passage",
 };
 
 // Convert kebab-case to camelCase (mirrors the runtime helper).

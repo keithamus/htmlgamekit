@@ -4,7 +4,7 @@ permalink: /api/components/sequencer/
 cemSkip: [attrs]
 ---
 
-A musical sequencer that plays during gameplay. Automatically starts when the game enters the `playing` state and stops when it leaves. Supports two modes via the `mode` attribute:
+A musical sequencer that plays during gameplay. Automatically starts when the game enters the `playing` or `between` state and stops when it leaves both. This means the sequencer continues playing through round transitions, providing uninterrupted audio across the play loop. Supports two modes via the `mode` attribute:
 
 - **`sequence`** (default) — Loops a note pattern at a BPM that ramps from `start-bpm` to `end-bpm` over the timer duration, creating a sense of mounting urgency.
 - **`hum`** — Plays a rising sine oscillator that glides from `root` to `end-freq`, with an initial silent period controlled by `silent-fraction`.
@@ -73,12 +73,12 @@ This defines a major arpeggio pattern: root, major third, fifth, octave, fifth, 
 
 <dt><span class="badge method">.start()</span></dt>
 <dd>
-Start the sequencer manually. Reads the <code>&lt;game-timer&gt;</code> duration from the nearest shell to calculate the BPM ramp duration. Normally called automatically when the game enters the <code>playing</code> state.
+Start the sequencer manually. Reads the <code>&lt;game-timer&gt;</code> duration from the nearest shell to calculate the BPM ramp duration. Normally called automatically when the game enters the <code>playing</code> or <code>between</code> state.
 </dd>
 
 <dt><span class="badge method">.stop()</span></dt>
 <dd>
-Stop the sequencer. Called automatically when the game leaves the <code>playing</code> state.
+Stop the sequencer. Called automatically when the game leaves both the <code>playing</code> and <code>between</code> states (e.g. entering <code>result</code> or <code>paused</code>).
 </dd>
 
 </dl>
@@ -100,7 +100,7 @@ This means the player feels comfortable at first, with tension building sharply 
 
 | Signal        | Usage                                                                                      |
 | ------------- | ------------------------------------------------------------------------------------------ |
-| Shell signals | Reads `scene` signal from the shell to auto-start during `playing` and auto-stop otherwise |
+| Shell signals | Reads `scene` signal from the shell to auto-start during `playing` and `between`, and auto-stop otherwise |
 
 ### Usage
 

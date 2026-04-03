@@ -37,11 +37,11 @@ module.exports = [
   },
   {
     name: "Game Logic",
-    tags: ["game-quiz", "game-tile-input", "game-word-source"],
+    tags: ["game-quiz", "game-tile-input", "game-word-source", "game-passage"],
   },
   {
     name: "Primitives",
-    tags: ["game-icon"],
+    tags: ["game-icon", "game-debug"],
   },
   {
     name: "Audio",

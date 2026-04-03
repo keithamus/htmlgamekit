@@ -228,6 +228,18 @@ The session is cleared automatically on game completion (<code>result</code>) or
 
 </dd>
 
+<dt><span class="badge attr">save-stats</span> <code>.saveStats</code></dt>
+<dd>
+<code>boolean</code> -- When present, the shell persists the <code>stats</code> signal to <code>localStorage</code> under the key <code>{storageKey}-stats</code>. On connection, saved stats are restored. Stats are cleared when <code>.start()</code> is called.
+
+This is useful for narrative or adventure games where stats (e.g. current room, story progress) need to survive page reloads.
+
+```html
+<game-shell id="game" game-id="my-adventure" save-stats></game-shell>
+```
+
+</dd>
+
 </dl>
 
 ### Commands
@@ -253,6 +265,17 @@ The shell supports the <a href="https://developer.mozilla.org/en-US/docs/Web/API
 | `--pause`      | Calls `shell.pause()`                             |
 | `--resume`     | Calls `shell.resume()`                            |
 | `--next-round` | Advances immediately when in `between`            |
+| `--stat`       | Sets a stat. `value="key:value"` on the button     |
+| `--collect`    | Adds to a collection. `value="collection:itemId"`   |
+| `--uncollect`  | Removes from a collection. `value="collection:itemId"` |
+
+The `--stat`, `--collect`, and `--uncollect` commands read their data from the `value` attribute on the invoking button, using `key:value` syntax where everything before the first `:` is the key/collection name and everything after is the value/item ID.
+
+```html
+<button commandfor="game" command="--stat" value="room:lobby">Go to lobby</button>
+<button commandfor="game" command="--collect" value="inventory:sword">Take sword</button>
+<button commandfor="game" command="--uncollect" value="inventory:sword">Drop sword</button>
+```
 
 Custom commands use the `--` prefix per the Invoker Commands spec. The shell requires an `id` attribute so buttons can reference it via `commandfor`.
 
@@ -383,6 +406,80 @@ if (shell.isTrophyUnlocked("hat-trick")) {
 
 </dd>
 
+<dt><span class="badge method">.addToCollection(name, id)</span></dt>
+<dd>
+Add an item to a named collection. Returns <code>true</code> if the item was newly added, <code>false</code> if already present. Collections are persisted to <code>localStorage</code> under <code>{storageKey}-collection-{name}</code>.
+
+```js
+shell.addToCollection("inventory", "sword"); // true
+shell.addToCollection("inventory", "sword"); // false (already present)
+```
+
+</dd>
+
+<dt><span class="badge method">.removeFromCollection(name, id)</span></dt>
+<dd>
+Remove an item from a named collection. Returns <code>true</code> if the item was present and removed.
+
+```js
+shell.removeFromCollection("inventory", "sword");
+```
+
+</dd>
+
+<dt><span class="badge method">.hasInCollection(name, id)</span></dt>
+<dd>
+Check if an item exists in a named collection. Returns <code>boolean</code>.
+
+```js
+if (shell.hasInCollection("inventory", "key")) {
+  // player has the key
+}
+```
+
+</dd>
+
+<dt><span class="badge method">.collectionSize(name)</span></dt>
+<dd>
+Returns the number of items in a named collection.
+
+```js
+const itemCount = shell.collectionSize("inventory");
+```
+
+</dd>
+
+<dt><span class="badge method">.collectionEntries(name)</span></dt>
+<dd>
+Returns an array of all item IDs in a named collection.
+
+```js
+const items = shell.collectionEntries("inventory");
+// ["sword", "shield", "potion"]
+```
+
+</dd>
+
+<dt><span class="badge method">.clearCollection(name)</span></dt>
+<dd>
+Removes all items from a named collection.
+
+```js
+shell.clearCollection("inventory");
+```
+
+</dd>
+
+<dt><span class="badge method">.isCollection(name)</span></dt>
+<dd>
+Check whether a named collection has been registered (even if empty). Used by the condition system to distinguish collection keys from signal/stat keys.
+
+```js
+shell.isCollection("inventory"); // true if any item was ever added
+```
+
+</dd>
+
 </dl>
 
 ---
@@ -393,9 +490,15 @@ if (shell.isTrophyUnlocked("hat-trick")) {
 
 <dt><span class="badge method">.start()</span></dt>
 <dd>
-Begins the game. Resets round counters and scores, initializes the progression (if any), sets <code>scene</code> to <code>"playing"</code>, and fires a <code>game-lifecycle</code> event.
+Begins the game. First dispatches a <code>game-lifecycle</code> event with action <code>"setup"</code> synchronously -- use this to initialise game state (set stats, collections, etc.) before play begins. Stats set during <code>"setup"</code> survive into the <code>"playing"</code> phase. After that, resets round counters and scores, initializes the progression (if any), and sets <code>scene</code> to <code>"playing"</code>.
 
 ```js
+shell.addEventListener("game-lifecycle", (e) => {
+  if (e.action === "setup") {
+    // Initialise stats, collections, etc. before "playing" begins
+    shell.addToCollection("visited", "start");
+  }
+});
 shell.start();
 ```
 
@@ -445,6 +548,8 @@ The shell listens for the following events bubbling up from descendant component
 | `game-resume-request`  | A child requests a resume                 | Calls `.resume()`                                                                                   |
 | `game-next-round`      | A child requests immediate round advance  | Advances to the next round immediately when in `between`                                            |
 | `game-trophy-unlock`   | A `<game-trophy>` was unlocked            | Records the trophy id in the shell's internal set and persists to localStorage                      |
+| `game-collection-add`  | A child wants to add to a collection      | Calls `addToCollection(collection, itemId)` and persists to localStorage                            |
+| `game-collection-remove` | A child wants to remove from a collection | Calls `removeFromCollection(collection, itemId)` and persists to localStorage                     |
 
 ---
 
@@ -454,10 +559,15 @@ The shell listens for the following events bubbling up from descendant component
 
 <dt><span class="badge event">game-lifecycle</span></dt>
 <dd>
-Fired on every scene transition. The event is a <code>GameLifecycleEvent</code> with <code>.action</code> (the new scene name), <code>.state</code> (a plain snapshot object), and <code>.scene</code> (the current scene name).
+Fired on every scene transition and at the start of <code>.start()</code> (with action <code>"setup"</code>). The event is a <code>GameLifecycleEvent</code> with <code>.action</code> (the new scene name or <code>"setup"</code>), <code>.state</code> (a plain snapshot object), and <code>.scene</code> (the current scene name).
+
+The <code>"setup"</code> action fires synchronously at the start of <code>.start()</code> before stats are wiped and the scene changes to <code>"playing"</code>. Use this to initialise game state (set stats, collections, etc.) on game start/restart.
 
 ```js
 shell.addEventListener("game-lifecycle", (e) => {
+  if (e.action === "setup") {
+    // Initialise game state before playing begins
+  }
   console.log(e.action, e.state.scene);
 });
 ```

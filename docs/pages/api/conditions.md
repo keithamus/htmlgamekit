@@ -34,6 +34,14 @@ Trophy checks use the key `trophy` with the trophy `id` as the attribute value, 
 | `when-no-trophy="id"`       | None of the listed trophies are unlocked |
 | `when-all-trophy="id1 id2"` | All of the listed trophies are unlocked  |
 
+Collection checks work the same way for any registered [collection](/api/game-shell/#collections). The key is the collection name and the value is one or more space-separated item IDs:
+
+| Attribute                        | Matches when                                      |
+| -------------------------------- | ------------------------------------------------- |
+| `when-some-inventory="sword"`    | `"sword"` is in the `"inventory"` collection      |
+| `when-no-visited="cellar"`       | `"cellar"` is NOT in the `"visited"` collection   |
+| `when-all-inventory="key lamp"`  | Both `"key"` and `"lamp"` are in `"inventory"`    |
+
 After the operator is stripped, the remaining kebab-case key is camelCased. So `when-min-pass-streak` resolves the key `passStreak`, and `when-eq-scene` resolves `scene`. Difficulty and stats object keys are also matched after camelCasing.
 
 ## Key Resolution
@@ -55,6 +63,8 @@ The `resolve(key)` function looks up values in this order:
 | `peakPassStreak`  | Highest pass streak reached this game                                                    |
 | `peakFailStreak`  | Highest fail streak reached this game                                                    |
 | _(any other key)_ | Looks up `difficulty` object first, then `stats` object (keys matched after camelCasing) |
+
+For `some`, `no`, and `all` operators, if the key matches a registered collection name (or `trophy`), the check performs set-membership tests on that collection rather than resolving a scalar value. The resolution order is: shell signals > round scores > trophy count > **collections** > difficulty > stats.
 
 ## Examples
 
@@ -161,6 +171,27 @@ Options that don't match are filtered out before random selection. Base options 
   description="Unlock 5 other trophies"
 >
 </game-trophy>
+```
+
+### Conditional Collection Checks
+
+Show content based on collection membership:
+
+```html
+<!-- Show only if the player has a sword in inventory -->
+<div when-some-inventory="sword">
+  You grip the sword tightly.
+</div>
+
+<!-- Show only if the player has NOT visited the cellar -->
+<div when-no-visited="cellar">
+  A dark stairway leads down. You haven't been there before.
+</div>
+
+<!-- Show only if the player has both a key AND a lamp -->
+<div when-all-inventory="key lamp">
+  You can unlock the door and see inside.
+</div>
 ```
 
 ### Combining Conditions
