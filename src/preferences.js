@@ -8,38 +8,125 @@ export class GamePreferenceChangeEvent extends Event {
   }
 }
 
+function storageKey(pref) {
+  const shell = pref.closest("game-shell");
+  const gameId = shell?.gameIdAttr || shell?.storageKeyAttr || "";
+  return `${gameId}-preferences`;
+}
+
+function loadStored(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveStored(key, obj) {
+  try {
+    localStorage.setItem(key, JSON.stringify(obj));
+  } catch {}
+}
+
+function applyToAudio(pref, value) {
+  const shell = pref.closest("game-shell");
+  if (!shell) return;
+  const audio = shell.querySelector("game-audio");
+  const key = pref.key;
+  if (key === "sound") {
+    if (audio) audio.muted = !value;
+    if (shell.muted) shell.muted.set(!value);
+  }
+  if (key === "volume" && audio) audio.volume = value / 100;
+  if (key === "vibration" && audio) audio.vibration = !!value;
+}
+
 /**
- * Data element that declares a single user preference. Place inside
- * `<game-preferences>` to define toggles or range sliders. The parent
- * reads these elements to build the preferences UI.
+ * Self-sufficient preference element. Owns its current value, persists
+ * to localStorage, and applies hardwired audio keys automatically.
+ * Works standalone anywhere inside a `<game-shell>`, or as a child of
+ * `<game-preferences>` for a full settings panel.
  *
- * @summary Single preference declaration (data element)
+ * Boolean preferences have `default="true"` or `default="false"`.
+ * Numeric preferences have a numeric `default` plus `min`/`max`.
+ *
+ * @summary Single user preference (standalone or inside preferences panel)
+ *
+ * @fires {GamePreferenceChangeEvent} game-preference-change
  */
 export class GamePreference extends HTMLElement {
   static attrs = {
     key: { type: "string" },
-    type: { type: "enum", values: ["toggle", "range"], default: "toggle" },
     label: { type: "string?" },
     default: { type: "string" },
     min: { type: "string", default: "0" },
     max: { type: "string", default: "100" },
   };
 
+  #value = undefined;
+  #connected = false;
+
   static define(tag = "game-preference", registry = customElements) {
     initAttrs(this);
     registry.define(tag, this);
+  }
+
+  get boolean() {
+    return this.default === "true" || this.default === "false";
+  }
+
+  get #defaultValue() {
+    if (this.boolean) return this.default !== "false";
+    const n = Number(this.default);
+    return Number.isFinite(n) ? n : this.default;
+  }
+
+  get value() {
+    return this.#value ?? this.#defaultValue;
+  }
+
+  connectedCallback() {
+    this.#connected = true;
+    this.#value = this.#defaultValue;
+    const sKey = storageKey(this);
+    const stored = loadStored(sKey);
+    if (stored && this.key in stored) this.#value = stored[this.key];
+    applyToAudio(this, this.#value);
+  }
+
+  disconnectedCallback() {
+    this.#connected = false;
+  }
+
+  set(value) {
+    this.#value = value;
+    this.#persist();
+    applyToAudio(this, value);
+    this.dispatchEvent(new GamePreferenceChangeEvent(this.key, value));
+  }
+
+  toggle() {
+    if (this.boolean) this.set(!this.value);
+  }
+
+  #persist() {
+    const sKey = storageKey(this);
+    const obj = loadStored(sKey) || {};
+    obj[this.key] = this.#value;
+    saveStored(sKey, obj);
   }
 }
 
 /**
  * User preferences panel with toggle switches and range sliders.
- * Reads `<game-preference>` children for configuration, persists
- * values to localStorage, and auto-wires the "sound", "volume", and
- * "vibration" keys to the nearest `<game-audio>`.
+ * Reads `<game-preference>` children for configuration and renders
+ * controls. Value ownership lives on each `<game-preference>` element;
+ * this panel provides the UI chrome.
  *
  * @summary User preferences UI panel
  *
- * @fires {GamePreferenceChangeEvent} game-preference-change - Fires when any preference value changes
+ * @fires {GamePreferenceChangeEvent} game-preference-change - Bubbles from child preferences
  */
 export default class GamePreferences extends GameComponent {
   static styles = css`
@@ -135,22 +222,14 @@ export default class GamePreferences extends GameComponent {
 
   static template = `<div class="prefs"><h2>Preferences</h2><div class="pref-list"></div><button class="done-btn" type="button">Done</button></div>`;
 
-  #values = {};
-  #storageKey = "";
-
   get(key) {
-    return this.#values[key];
+    const pref = this.querySelector(`game-preference[key="${key}"]`);
+    return pref?.value;
   }
 
   connectedCallback() {
-    const shell = this.shell;
-    const gameId = shell?.gameIdAttr || shell?.storageKeyAttr || "";
-    this.#storageKey = `${gameId}-preferences`;
-
-    this.#loadDefaults();
-    this.#load();
+    super.connectedCallback();
     this.#render();
-    this.#applyAll();
 
     this.shadowRoot.querySelector(".done-btn").addEventListener(
       "click",
@@ -159,20 +238,6 @@ export default class GamePreferences extends GameComponent {
       },
       { signal: this.signal },
     );
-  }
-
-  #loadDefaults() {
-    for (const pref of this.querySelectorAll("game-preference")) {
-      const key = pref.key;
-      if (!key) continue;
-      if (pref.type === "toggle") {
-        this.#values[key] = pref.default !== "false";
-      } else if (pref.type === "range") {
-        this.#values[key] = Number(pref.default) || 0;
-      } else {
-        this.#values[key] = pref.default;
-      }
-    }
   }
 
   #render() {
@@ -191,19 +256,20 @@ export default class GamePreferences extends GameComponent {
       label.textContent = pref.label ?? pref.key;
       row.appendChild(label);
 
-      if (pref.type === "toggle") {
+      if (pref.boolean) {
         const toggle = document.createElement("label");
         toggle.className = "toggle";
         const input = document.createElement("input");
         input.type = "checkbox";
-        input.checked = !!this.#values[key];
+        input.checked = !!pref.value;
         input.addEventListener(
           "change",
-          () => {
-            this.#values[key] = input.checked;
-            this.#save();
-            this.#apply(key, input.checked);
-          },
+          () => pref.set(input.checked),
+          { signal: this.signal },
+        );
+        pref.addEventListener(
+          "game-preference-change",
+          () => { input.checked = !!pref.value; },
           { signal: this.signal },
         );
         const track = document.createElement("span");
@@ -211,14 +277,14 @@ export default class GamePreferences extends GameComponent {
         toggle.appendChild(input);
         toggle.appendChild(track);
         row.appendChild(toggle);
-      } else if (pref.type === "range") {
+      } else {
         const range = document.createElement("div");
         range.className = "range";
         const input = document.createElement("input");
         input.type = "range";
         input.min = pref.min;
         input.max = pref.max;
-        input.value = this.#values[key];
+        input.value = pref.value;
         for (const evt of ["touchstart", "touchmove", "touchend"]) {
           input.addEventListener(evt, (e) => e.stopPropagation(), {
             signal: this.signal,
@@ -226,11 +292,12 @@ export default class GamePreferences extends GameComponent {
         }
         input.addEventListener(
           "input",
-          () => {
-            this.#values[key] = Number(input.value);
-            this.#save();
-            this.#apply(key, Number(input.value));
-          },
+          () => pref.set(Number(input.value)),
+          { signal: this.signal },
+        );
+        pref.addEventListener(
+          "game-preference-change",
+          () => { input.value = pref.value; },
           { signal: this.signal },
         );
         range.appendChild(input);
@@ -239,46 +306,5 @@ export default class GamePreferences extends GameComponent {
 
       list.appendChild(row);
     }
-  }
-
-  #apply(key, value) {
-    this.dispatchEvent(new GamePreferenceChangeEvent(key, value));
-
-    const shell = this.shell;
-    if (!shell) return;
-    const audio = shell.querySelector("game-audio");
-
-    if (key === "sound" && audio) {
-      audio.muted = !value;
-    }
-    if (key === "volume" && audio) {
-      audio.volume = value / 100;
-    }
-    if (key === "vibration" && audio) {
-      audio.vibration = !!value;
-    }
-  }
-
-  #applyAll() {
-    for (const [key, value] of Object.entries(this.#values)) {
-      this.#apply(key, value);
-    }
-  }
-
-  #load() {
-    try {
-      const raw = localStorage.getItem(this.#storageKey);
-      if (!raw) return;
-      const obj = JSON.parse(raw);
-      for (const [k, v] of Object.entries(obj)) {
-        if (k in this.#values) this.#values[k] = v;
-      }
-    } catch {}
-  }
-
-  #save() {
-    try {
-      localStorage.setItem(this.#storageKey, JSON.stringify(this.#values));
-    } catch {}
   }
 }

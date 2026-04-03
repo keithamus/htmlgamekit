@@ -4,7 +4,7 @@ permalink: /api/components/sequencer/
 cemSkip: [attrs]
 ---
 
-A musical sequencer that plays during gameplay. Automatically starts when the game enters the `playing` or `between` state and stops when it leaves both. This means the sequencer continues playing through round transitions, providing uninterrupted audio across the play loop. Supports two modes via the `mode` attribute:
+A musical sequencer that plays during gameplay. Automatically starts when the game enters the `playing` or `between` state and stops when it leaves both (or when audio is muted). This means the sequencer continues playing through round transitions, providing uninterrupted audio across the play loop. Supports two modes via the `mode` attribute:
 
 - **`sequence`** (default) — Loops a note pattern at a BPM that ramps from `start-bpm` to `end-bpm` over the timer duration, creating a sense of mounting urgency.
 - **`hum`** — Plays a rising sine oscillator that glides from `root` to `end-freq`, with an initial silent period controlled by `silent-fraction`.
@@ -101,6 +101,11 @@ This means the player feels comfortable at first, with tension building sharply 
 | Signal        | Usage                                                                                      |
 | ------------- | ------------------------------------------------------------------------------------------ |
 | Shell signals | Reads `scene` signal from the shell to auto-start during `playing` and `between`, and auto-stop otherwise |
+| `game-preference-change` | Listens for `sound` preference changes on the shell to stop/start when muted |
+
+### Mute Awareness
+
+The sequencer checks the `<game-audio>` element's `muted` attribute before starting. If audio is muted, the sequencer stays stopped even during `playing`/`between` scenes. When the `sound` preference is toggled (via `--toggle-mute` or the preferences panel), the sequencer reacts immediately -- stopping if muted, resuming if unmuted and the game is in a playing state.
 
 ### Usage
 

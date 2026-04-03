@@ -33,13 +33,38 @@ export default class GameSequencer extends GameComponent {
   #humOsc = null;
   #humGain = null;
 
-  effectCallback({ scene }) {
-    const s = scene.get();
-    if (s === "playing" || s === "between") {
+  #lastScene = "";
+
+  connectedCallback() {
+    super.connectedCallback();
+    const shell = this.shell;
+    if (shell) {
+      shell.addEventListener(
+        "game-preference-change",
+        (e) => {
+          if (e.key === "sound") this.#sync();
+        },
+        { signal: this.signal },
+      );
+    }
+  }
+
+  get #muted() {
+    return this.shell?.querySelector("game-audio")?.muted ?? false;
+  }
+
+  #sync() {
+    const s = this.#lastScene;
+    if (!this.#muted && (s === "playing" || s === "between")) {
       if (!this.#scheduler && !this.#humOsc) this.start();
     } else {
       this.stop();
     }
+  }
+
+  effectCallback({ scene }) {
+    this.#lastScene = scene.get();
+    this.#sync();
   }
 
   get #parsedNotes() {

@@ -268,6 +268,7 @@ The shell supports the <a href="https://developer.mozilla.org/en-US/docs/Web/API
 | `--stat`       | Sets a stat. `value="key:value"` on the button     |
 | `--collect`    | Adds to a collection. `value="collection:itemId"`   |
 | `--uncollect`  | Removes from a collection. `value="collection:itemId"` |
+| `--toggle-mute`| Toggles the `sound` `<game-preference>`, muting/unmuting audio |
 
 The `--stat`, `--collect`, and `--uncollect` commands read their data from the `value` attribute on the invoking button, using `key:value` syntax where everything before the first `:` is the key/collection name and everything after is the value/item ID.
 
@@ -275,6 +276,17 @@ The `--stat`, `--collect`, and `--uncollect` commands read their data from the `
 <button commandfor="game" command="--stat" value="room:lobby">Go to lobby</button>
 <button commandfor="game" command="--collect" value="inventory:sword">Take sword</button>
 <button commandfor="game" command="--uncollect" value="inventory:sword">Drop sword</button>
+```
+
+`--toggle-mute` finds the first `<game-preference key="sound">` inside the shell and calls its `.toggle()` method. The preference handles persistence and auto-wiring to `<game-audio>`. Pair with a `<game-icon>` to show the current state:
+
+```html
+<game-preference key="sound" default="true"></game-preference>
+<button commandfor="game" command="--toggle-mute" aria-label="Toggle sound">
+  <game-icon name="volume-2">
+    <option when-some-muted value="volume-x"></option>
+  </game-icon>
+</button>
 ```
 
 Custom commands use the `--` prefix per the Invoker Commands spec. The shell requires an `id` attribute so buttons can reference it via `commandfor`.
@@ -313,6 +325,7 @@ The shell exposes all game state as public `Signal.State` properties directly on
 | `challenge`         | `Signal.State<object      | null>`                                         | Challenge data                                     |
 | `formatScoreSignal` | `Signal.State<function    | null>`                                         | Score formatting function (set via `.formatScore`) |
 | `spriteSheet`       | `Signal.State<string>`    | Sprite sheet URL from `sprite-sheet` attribute |
+| `muted`             | `Signal.State<boolean>`   | Whether sound is muted; synced by `<game-preference key="sound">` |
 
 Components access these via `effectCallback`:
 

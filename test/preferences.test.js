@@ -18,13 +18,11 @@ function createShellWithPrefs() {
 
   const pref1 = document.createElement("game-preference");
   pref1.setAttribute("key", "sound");
-  pref1.setAttribute("type", "toggle");
   pref1.setAttribute("label", "Sound");
   pref1.setAttribute("default", "true");
 
   const pref2 = document.createElement("game-preference");
   pref2.setAttribute("key", "volume");
-  pref2.setAttribute("type", "range");
   pref2.setAttribute("label", "Volume");
   pref2.setAttribute("default", "80");
   pref2.setAttribute("min", "0");
@@ -148,12 +146,93 @@ describe("game-preference", () => {
     history.replaceState(null, "", location.pathname);
   });
 
-  it("type defaults to toggle, label to null, default to empty string, min to 0, max to 100", () => {
+  it("label defaults to null, default to empty string, min to 0, max to 100", () => {
     const el = document.createElement("game-preference");
-    assert.equal(el.type, "toggle");
     assert.isNull(el.label);
     assert.equal(el.default, "");
     assert.equal(el.min, "0");
     assert.equal(el.max, "100");
+  });
+
+  it("boolean is true when default is true or false", () => {
+    const el = document.createElement("game-preference");
+    el.setAttribute("default", "true");
+    assert.isTrue(el.boolean);
+    el.setAttribute("default", "false");
+    assert.isTrue(el.boolean);
+    el.setAttribute("default", "50");
+    assert.isFalse(el.boolean);
+  });
+
+  it("value returns default when not connected", () => {
+    const el = document.createElement("game-preference");
+    el.setAttribute("default", "true");
+    assert.isTrue(el.value);
+  });
+
+  it("toggle() flips boolean value", () => {
+    const shell = document.createElement("game-shell");
+    shell.setAttribute("game-id", "pref-toggle-test");
+    const el = document.createElement("game-preference");
+    el.setAttribute("key", "sound");
+    el.setAttribute("default", "true");
+    shell.appendChild(el);
+    document.body.appendChild(shell);
+    assert.isTrue(el.value);
+    el.toggle();
+    assert.isFalse(el.value);
+    el.toggle();
+    assert.isTrue(el.value);
+  });
+
+  it("set() persists to localStorage", () => {
+    const shell = document.createElement("game-shell");
+    shell.setAttribute("game-id", "pref-set-test");
+    const el = document.createElement("game-preference");
+    el.setAttribute("key", "sound");
+    el.setAttribute("default", "true");
+    shell.appendChild(el);
+    document.body.appendChild(shell);
+    el.set(false);
+    const stored = JSON.parse(localStorage.getItem("pref-set-test-preferences"));
+    assert.equal(stored.sound, false);
+  });
+
+  it("dispatches game-preference-change on set()", () => {
+    const shell = document.createElement("game-shell");
+    shell.setAttribute("game-id", "pref-evt-test");
+    const el = document.createElement("game-preference");
+    el.setAttribute("key", "sound");
+    el.setAttribute("default", "true");
+    shell.appendChild(el);
+    document.body.appendChild(shell);
+
+    let eventFired = false;
+    let eventKey, eventValue;
+    el.addEventListener("game-preference-change", (e) => {
+      eventFired = true;
+      eventKey = e.key;
+      eventValue = e.value;
+    });
+
+    el.set(false);
+    assert.isTrue(eventFired);
+    assert.equal(eventKey, "sound");
+    assert.equal(eventValue, false);
+  });
+
+  it("restores value from localStorage on connect", async () => {
+    localStorage.setItem(
+      "pref-restore-test-preferences",
+      JSON.stringify({ sound: false }),
+    );
+    const shell = document.createElement("game-shell");
+    shell.setAttribute("game-id", "pref-restore-test");
+    const el = document.createElement("game-preference");
+    el.setAttribute("key", "sound");
+    el.setAttribute("default", "true");
+    shell.appendChild(el);
+    document.body.appendChild(shell);
+    assert.isFalse(el.value);
   });
 });

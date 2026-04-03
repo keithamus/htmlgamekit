@@ -245,6 +245,7 @@ export default class GameShell extends HTMLElement {
   challenge = new Signal.State(null);
   formatScoreSignal = new Signal.State(null);
   spriteSheet = new Signal.State("");
+  muted = new Signal.State(false);
 
   #shadow = this.attachShadow({ mode: "open", slotAssignment: "manual" });
   #slot = (() => {
@@ -869,6 +870,9 @@ export default class GameShell extends HTMLElement {
           if (sep > 0) {
             this.removeFromCollection(val.slice(0, sep), val.slice(sep + 1));
           }
+        } else if (e.command === "--toggle-mute") {
+          const pref = this.querySelector('game-preference[key="sound"]');
+          if (pref) pref.toggle();
         }
       },
       { signal },

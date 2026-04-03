@@ -288,10 +288,12 @@ describe("red-team: component edge cases", () => {
   });
 
   describe("preferences edge cases", () => {
-    it('preference with unknown type falls back to "toggle"', () => {
+    it("boolean is inferred from default attribute", () => {
       const el = document.createElement("game-preference");
-      el.setAttribute("type", "slider");
-      assert.equal(el.type, "toggle");
+      el.setAttribute("default", "true");
+      assert.isTrue(el.boolean);
+      el.setAttribute("default", "80");
+      assert.isFalse(el.boolean);
     });
 
     it("corrupt localStorage data does not crash — loads defaults", async () => {
@@ -303,7 +305,6 @@ describe("red-team: component edge cases", () => {
       const prefs = document.createElement("game-preferences");
       const pref = document.createElement("game-preference");
       pref.setAttribute("key", "sound");
-      pref.setAttribute("type", "toggle");
       pref.setAttribute("default", "true");
       prefs.appendChild(pref);
       shell.appendChild(prefs);

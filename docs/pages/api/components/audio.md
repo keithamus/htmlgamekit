@@ -31,7 +31,7 @@ Auto-wired by `<game-preferences>` when the `vibration` key is toggled.
 
 <dt><span class="badge attr">muted</span></dt>
 <dd>
-<code>boolean</code> — When present, all sample playback is suppressed. Auto-wired by `<game-preferences>` when the `sound` key is toggled.
+<code>boolean</code> — When present, all sample playback is suppressed. Auto-wired by `<game-preference key="sound">` (whether standalone or inside a `<game-preferences>` panel). Also synced to the shell's `muted` signal for use by `when-*` conditions and `<game-icon>`.
 </dd>
 
 <dt><span class="badge attr">volume</span></dt>

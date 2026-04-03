@@ -56,6 +56,7 @@ cleaned up when the component disconnects.
 | `challenge`         | `object \| null`   | Opponent's decoded result for challenge mode                            |
 | `formatScoreSignal` | `function \| null` | Score formatting function, set via `shell.formatScore`                  |
 | `spriteSheet`       | `string`           | URL of the SVG sprite sheet, mirrors the `sprite-sheet` attribute       |
+| `muted`             | `boolean`          | Whether sound is muted; synced by `<game-preference key="sound">`       |
 
 ## Effect Scheduling
 
