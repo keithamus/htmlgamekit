@@ -52,6 +52,7 @@
     "./progressions/tier": "./src/progressions/tier.js",
     "./pending-task": "./src/pending-task.js",
     "./scores": "./src/scores.js",
+    "./trophies": "./src/trophies.js",
     "./toast": "./src/toast.js",
     "./icon": "./src/icon.js",
     "./tile-input": "./src/tile-input.js",

@@ -183,6 +183,20 @@ All attributes reflect as IDL properties (e.g. `game-id` reflects as `.gameIdAtt
 
 </dd>
 
+<dt><span class="badge attr">trophy-url</span> <code>.trophyUrl</code></dt>
+<dd>
+<code>string?</code> -- Base URL for the <a href="https://trophies.htmlgamekit.dev">trophy persistence API</a>. When set, the shell syncs trophies with the remote server — fetching on load and pushing each unlock immediately. Players are identified by an anonymous UUID stored in localStorage and sent as an <code>Authorization: Bearer</code> header.
+
+```html
+<game-shell
+  game-id="reaction-time"
+  trophy-url="https://trophies.htmlgamekit.dev"
+></game-shell>
+```
+
+If the server is unreachable, trophies degrade gracefully to localStorage-only.
+</dd>
+
 <dt><span class="badge attr">scenes</span> <code>.scenes</code></dt>
 <dd>
 <code>string?</code> -- Optional custom scene names recognised by the slot assignment logic, in addition to built-ins. Accepts a space- or comma-separated list.

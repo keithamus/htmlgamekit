@@ -1,5 +1,6 @@
 import { assert } from "@open-wc/testing";
 import "../src/auto.js";
+import { GameRoundPassEvent } from "../src/events.js";
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
@@ -372,5 +373,295 @@ describe("game-trophy", () => {
     assert.isFalse(trophy.unlocked);
     trophy.unlock();
     assert.isTrue(trophy.unlocked);
+  });
+
+  describe("remote trophy sync", () => {
+    let originalFetch;
+
+    beforeEach(() => {
+      originalFetch = window.fetch;
+    });
+
+    afterEach(() => {
+      window.fetch = originalFetch;
+    });
+
+    it("unlock pushes trophy to remote server immediately", async () => {
+      const puts = [];
+      window.fetch = (url, opts) => {
+        if (opts?.method === "PUT" && url.includes("/t/")) {
+          puts.push(url);
+          return Promise.resolve({
+            ok: true,
+            headers: new Headers(),
+            json: () => Promise.resolve({ player: "test-uuid" }),
+          });
+        }
+        // GET for fetchTrophies during init
+        return Promise.resolve({
+          ok: true,
+          headers: new Headers(),
+          json: () =>
+            Promise.resolve({
+              player: "test-uuid",
+              game: "trophy-remote-push",
+              trophies: [],
+            }),
+        });
+      };
+
+      document.body.innerHTML = `
+        <game-shell game-id="trophy-remote-push" rounds="3" trophy-url="https://trophies.example.com">
+          <game-trophy id="gold" name="Gold"></game-trophy>
+        </game-shell>
+      `;
+      await tick();
+
+      document.querySelector("game-trophy#gold").unlock();
+      await tick();
+
+      assert.isTrue(puts.some((u) => u.includes("/gold")));
+    });
+
+    it("remote trophies are merged with localStorage on init", async () => {
+      localStorage.setItem(
+        "trophy-remote-merge-trophies",
+        JSON.stringify(["local-only"]),
+      );
+
+      window.fetch = (url, opts) => {
+        if (!opts?.method || opts.method === "GET") {
+          return Promise.resolve({
+            ok: true,
+            headers: new Headers(),
+            json: () =>
+              Promise.resolve({
+                player: "test-uuid",
+                game: "trophy-remote-merge",
+                trophies: [
+                  { id: "remote-only", unlocked_at: "2026-01-01 00:00:00" },
+                  { id: "local-only", unlocked_at: "2026-01-01 00:00:00" },
+                ],
+              }),
+          });
+        }
+        return Promise.resolve({ ok: true, headers: new Headers() });
+      };
+
+      document.body.innerHTML = `
+        <game-shell game-id="trophy-remote-merge" rounds="3" trophy-url="https://trophies.example.com">
+          <game-trophy id="local-only" name="Local"></game-trophy>
+          <game-trophy id="remote-only" name="Remote"></game-trophy>
+          <game-trophy id="neither" name="Neither"></game-trophy>
+        </game-shell>
+      `;
+      await tick();
+      // Allow the async fetch to resolve
+      await tick();
+
+      const shell = document.querySelector("game-shell");
+      assert.isTrue(shell.isTrophyUnlocked("local-only"));
+      assert.isTrue(shell.isTrophyUnlocked("remote-only"));
+      assert.isFalse(shell.isTrophyUnlocked("neither"));
+    });
+
+    it("remote sync updates localStorage with merged set", async () => {
+      localStorage.setItem(
+        "trophy-remote-ls-trophies",
+        JSON.stringify(["alpha"]),
+      );
+
+      window.fetch = () =>
+        Promise.resolve({
+          ok: true,
+          headers: new Headers(),
+          json: () =>
+            Promise.resolve({
+              player: "test-uuid",
+              game: "trophy-remote-ls",
+              trophies: [
+                { id: "alpha", unlocked_at: "2026-01-01 00:00:00" },
+                { id: "beta", unlocked_at: "2026-01-02 00:00:00" },
+              ],
+            }),
+        });
+
+      document.body.innerHTML = `
+        <game-shell game-id="trophy-remote-ls" rounds="3" trophy-url="https://trophies.example.com">
+          <game-trophy id="alpha" name="Alpha"></game-trophy>
+          <game-trophy id="beta" name="Beta"></game-trophy>
+        </game-shell>
+      `;
+      await tick();
+      await tick();
+
+      const saved = JSON.parse(
+        localStorage.getItem("trophy-remote-ls-trophies"),
+      );
+      assert.include(saved, "alpha");
+      assert.include(saved, "beta");
+    });
+
+    it("remote sync unlocks trophy elements that were locked locally", async () => {
+      window.fetch = () =>
+        Promise.resolve({
+          ok: true,
+          headers: new Headers(),
+          json: () =>
+            Promise.resolve({
+              player: "test-uuid",
+              game: "trophy-remote-el",
+              trophies: [{ id: "from-server", unlocked_at: "2026-01-01 00:00:00" }],
+            }),
+        });
+
+      document.body.innerHTML = `
+        <game-shell game-id="trophy-remote-el" rounds="3" trophy-url="https://trophies.example.com">
+          <game-trophy id="from-server" name="From Server"></game-trophy>
+        </game-shell>
+      `;
+      await tick();
+      await tick();
+
+      const trophy = document.querySelector("game-trophy#from-server");
+      assert.isTrue(trophy.unlocked);
+    });
+
+    it("no trophy-url means no remote calls", async () => {
+      let fetchCalled = false;
+      window.fetch = () => {
+        fetchCalled = true;
+        return Promise.resolve({ ok: false, headers: new Headers() });
+      };
+
+      document.body.innerHTML = `
+        <game-shell game-id="trophy-no-url" rounds="3">
+          <game-trophy id="local" name="Local"></game-trophy>
+        </game-shell>
+      `;
+      await tick();
+
+      document.querySelector("game-trophy#local").unlock();
+      await tick();
+
+      assert.isFalse(fetchCalled);
+    });
+
+    it("remote server failure does not break local trophy persistence", async () => {
+      window.fetch = () => Promise.reject(new Error("server down"));
+
+      document.body.innerHTML = `
+        <game-shell game-id="trophy-fail-graceful" rounds="3" trophy-url="https://trophies.example.com">
+          <game-trophy id="resilient" name="Resilient"></game-trophy>
+        </game-shell>
+      `;
+      await tick();
+      await tick();
+
+      const trophy = document.querySelector("game-trophy#resilient");
+      trophy.unlock();
+
+      assert.isTrue(trophy.unlocked);
+      const shell = document.querySelector("game-shell");
+      assert.isTrue(shell.isTrophyUnlocked("resilient"));
+
+      const saved = JSON.parse(
+        localStorage.getItem("trophy-fail-graceful-trophies"),
+      );
+      assert.include(saved, "resilient");
+    });
+
+    it("auto-unlock on result scene persists both locally and remotely", async () => {
+      const puts = [];
+      window.fetch = (url, opts) => {
+        if (opts?.method === "PUT" && url.includes("/t/")) {
+          puts.push(url);
+          return Promise.resolve({
+            ok: true,
+            headers: new Headers(),
+            json: () => Promise.resolve({ player: "test-uuid" }),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          headers: new Headers(),
+          json: () =>
+            Promise.resolve({
+              player: "test-uuid",
+              game: "trophy-auto-remote",
+              trophies: [],
+            }),
+        });
+      };
+
+      document.body.innerHTML = `
+        <game-shell game-id="trophy-auto-remote" rounds="1" between-delay="0" trophy-url="https://trophies.example.com">
+          <game-trophy id="auto-gold" name="Auto Gold" when-min-score="5"></game-trophy>
+        </game-shell>
+      `;
+      await tick();
+
+      const shell = document.querySelector("game-shell");
+      shell.start();
+      await tick();
+
+      shell.dispatchEvent(new GameRoundPassEvent(10, "Great!"));
+      await tick();
+      // Wait for result scene transition
+      await tick();
+
+      const trophy = document.querySelector("game-trophy#auto-gold");
+      assert.isTrue(trophy.unlocked);
+
+      // Check localStorage
+      const saved = JSON.parse(
+        localStorage.getItem("trophy-auto-remote-trophies"),
+      );
+      assert.include(saved, "auto-gold");
+
+      // Check remote call was made
+      assert.isTrue(puts.some((u) => u.includes("/auto-gold")));
+    });
+
+    it("duplicate unlock does not fire duplicate remote calls", async () => {
+      const puts = [];
+      window.fetch = (url, opts) => {
+        if (opts?.method === "PUT" && url.includes("/t/")) {
+          puts.push(url);
+          return Promise.resolve({
+            ok: true,
+            headers: new Headers(),
+            json: () => Promise.resolve({ player: "test-uuid" }),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          headers: new Headers(),
+          json: () =>
+            Promise.resolve({
+              player: "test-uuid",
+              game: "trophy-dedup",
+              trophies: [],
+            }),
+        });
+      };
+
+      document.body.innerHTML = `
+        <game-shell game-id="trophy-dedup" rounds="3" trophy-url="https://trophies.example.com">
+          <game-trophy id="once" name="Once"></game-trophy>
+        </game-shell>
+      `;
+      await tick();
+
+      const trophy = document.querySelector("game-trophy#once");
+      trophy.unlock();
+      trophy.unlock();
+      trophy.unlock();
+      await tick();
+
+      // The event only fires once (unlock is idempotent), so only one PUT
+      const trophyPuts = puts.filter((u) => u.includes("/t/trophy-dedup"));
+      assert.equal(trophyPuts.length, 1);
+    });
   });
 });

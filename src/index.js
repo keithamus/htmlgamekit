@@ -70,6 +70,7 @@ export { matchesConditions } from "./conditions.js";
 export { STATE_TRIGGERS, DOM_TRIGGERS } from "./triggers.js";
 
 export { default as gameScores, noopScores } from "./scores.js";
+export { default as gameTrophies, noopTrophies } from "./trophies.js";
 export { groupParam, appendGroupParam } from "./shell.js";
 
 import GameShell from "./shell.js";

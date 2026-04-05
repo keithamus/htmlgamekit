@@ -2,6 +2,7 @@ import { Signal } from "signal-polyfill";
 import { effect } from "./signals.js";
 import { GameLifecycleEvent } from "./events.js";
 import gameScores, { noopScores } from "./scores.js";
+import gameTrophies, { noopTrophies } from "./trophies.js";
 import FixedProgression from "./progressions/fixed.js";
 import StaircaseProgression from "./progressions/staircase.js";
 import TierProgression from "./progressions/tier.js";
@@ -199,6 +200,7 @@ export default class GameShell extends HTMLElement {
       prop: "betweenDelayAttr",
     },
     "score-url": { type: "string?" },
+    "trophy-url": { type: "string?" },
     scenes: { type: "string?" },
     "storage-key": { type: "string?", prop: "storageKeyAttr" },
     "sprite-sheet": { type: "string?", prop: "spriteSheetAttr" },
@@ -264,6 +266,7 @@ export default class GameShell extends HTMLElement {
 
   #trophyUnlocked = new Set();
   #trophyStorageKey = "";
+  #trophyService = noopTrophies;
   #collections = new Map();
   #abort = null;
   #effectDisposers = [];
@@ -630,6 +633,7 @@ export default class GameShell extends HTMLElement {
         if (e.trophyId && !this.#trophyUnlocked.has(e.trophyId)) {
           this.#trophyUnlocked.add(e.trophyId);
           this.#saveTrophies();
+          this.#trophyService.unlockTrophy(e.trophyId);
         }
       },
       { signal },
@@ -910,6 +914,14 @@ export default class GameShell extends HTMLElement {
       this.#scores = gameScores(this.gameIdAttr, { baseUrl: scoreUrl });
     }
 
+    const trophyUrl = this.trophyUrl;
+    if (trophyUrl && this.#trophyService === noopTrophies) {
+      this.#trophyService = gameTrophies(this.gameIdAttr, {
+        baseUrl: trophyUrl,
+      });
+      this.#syncRemoteTrophies();
+    }
+
     if (this.getAttribute("group") !== null) {
       const key =
         this.getAttribute("group") || `${this.storageKey.get()}-group`;
@@ -1054,6 +1066,28 @@ export default class GameShell extends HTMLElement {
     storagePutJson(localStorage, this.#trophyStorageKey, [
       ...this.#trophyUnlocked,
     ]);
+  }
+
+  async #syncRemoteTrophies() {
+    const remote = await this.#trophyService.fetchTrophies();
+    if (!remote.length) return;
+    let changed = false;
+    for (const entry of remote) {
+      const id = typeof entry === "string" ? entry : entry.id;
+      if (!this.#trophyUnlocked.has(id)) {
+        this.#trophyUnlocked.add(id);
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.#saveTrophies();
+      // Re-check trophy elements to reflect remotely unlocked trophies
+      for (const el of this.querySelectorAll("game-trophy")) {
+        if (el.id && this.#trophyUnlocked.has(el.id) && !el.unlocked) {
+          el.unlock();
+        }
+      }
+    }
   }
 
   #syncCustomStates(to) {
