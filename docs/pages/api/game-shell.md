@@ -195,6 +195,7 @@ All attributes reflect as IDL properties (e.g. `game-id` reflects as `.gameIdAtt
 ```
 
 If the server is unreachable, trophies degrade gracefully to localStorage-only.
+
 </dd>
 
 <dt><span class="badge attr">scenes</span> <code>.scenes</code></dt>
@@ -244,12 +245,34 @@ The session is cleared automatically on game completion (<code>result</code>) or
 
 <dt><span class="badge attr">save-stats</span> <code>.saveStats</code></dt>
 <dd>
-<code>boolean</code> -- When present, the shell persists the <code>stats</code> signal to <code>localStorage</code> under the key <code>{storageKey}-stats</code>. On connection, saved stats are restored. Stats are cleared when <code>.start()</code> is called.
+<code>"persist" | "daily" | "auto"</code> -- Controls whether and how the shell persists the <code>stats</code> signal to <code>localStorage</code> under the key <code>{storageKey}-stats</code>. IDL property returns <code>null</code> when absent, <code>"auto"</code> for a bare/unrecognised value, <code>"persist"</code>, or <code>"daily"</code>.
 
-This is useful for narrative or adventure games where stats (e.g. current room, story progress) need to survive page reloads.
+**Bare attribute** (<code>save-stats</code>) -- Stats are persisted and restored on page load. Cleared when <code>.start()</code> is called. Useful for per-session game state (current room, story progress).
 
 ```html
 <game-shell id="game" game-id="my-adventure" save-stats></game-shell>
+```
+
+**<code>"persist"</code>** -- Stats survive <code>.start()</code> calls and are never cleared by the shell. Useful for lifetime stats (total games played, best streak, unlocks).
+
+```html
+<game-shell id="game" game-id="my-game" save-stats="persist"></game-shell>
+```
+
+**<code>"daily"</code>** -- Day-aware persistence for daily puzzle games:
+
+- The shell exposes a <code>day</code> computed signal (see <a href="#signals">Signals</a>) with today's day number (day 1 = 2026-01-01).
+- A <code>_day</code> field is auto-stamped into persisted stats and result data. Game code does not need to manage this.
+- On page load, stale stats and results from a previous day are discarded automatically.
+- If in-progress stats exist for today (but no result), the shell skips the intro and calls <code>.start()</code> automatically.
+
+```html
+<game-shell
+  id="game"
+  game-id="wordnt"
+  save-stats="daily"
+  rounds="0"
+></game-shell>
 ```
 
 </dd>
@@ -271,25 +294,31 @@ The shell supports the <a href="https://developer.mozilla.org/en-US/docs/Web/API
 </game-shell>
 ```
 
-| Command        | Action                                            |
-| -------------- | ------------------------------------------------- |
-| `--start`      | Calls `shell.start()` -- starts a new game        |
-| `--restart`    | Calls `shell.start()` -- restarts (same as start) |
-| `--practice`   | Sets `scene` signal to `"practice"`               |
-| `--pause`      | Calls `shell.pause()`                             |
-| `--resume`     | Calls `shell.resume()`                            |
-| `--next-round` | Advances immediately when in `between`            |
-| `--stat`       | Sets a stat. `value="key:value"` on the button     |
-| `--collect`    | Adds to a collection. `value="collection:itemId"`   |
-| `--uncollect`  | Removes from a collection. `value="collection:itemId"` |
-| `--toggle-mute`| Toggles the `sound` `<game-preference>`, muting/unmuting audio |
+| Command         | Action                                                         |
+| --------------- | -------------------------------------------------------------- |
+| `--start`       | Calls `shell.start()` -- starts a new game                     |
+| `--restart`     | Calls `shell.start()` -- restarts (same as start)              |
+| `--practice`    | Sets `scene` signal to `"practice"`                            |
+| `--pause`       | Calls `shell.pause()`                                          |
+| `--resume`      | Calls `shell.resume()`                                         |
+| `--next-round`  | Advances immediately when in `between`                         |
+| `--stat`        | Sets a stat. `value="key:value"` on the button                 |
+| `--collect`     | Adds to a collection. `value="collection:itemId"`              |
+| `--uncollect`   | Removes from a collection. `value="collection:itemId"`         |
+| `--toggle-mute` | Toggles the `sound` `<game-preference>`, muting/unmuting audio |
 
 The `--stat`, `--collect`, and `--uncollect` commands read their data from the `value` attribute on the invoking button, using `key:value` syntax where everything before the first `:` is the key/collection name and everything after is the value/item ID.
 
 ```html
-<button commandfor="game" command="--stat" value="room:lobby">Go to lobby</button>
-<button commandfor="game" command="--collect" value="inventory:sword">Take sword</button>
-<button commandfor="game" command="--uncollect" value="inventory:sword">Drop sword</button>
+<button commandfor="game" command="--stat" value="room:lobby">
+  Go to lobby
+</button>
+<button commandfor="game" command="--collect" value="inventory:sword">
+  Take sword
+</button>
+<button commandfor="game" command="--uncollect" value="inventory:sword">
+  Drop sword
+</button>
 ```
 
 `--toggle-mute` finds the first `<game-preference key="sound">` inside the shell and calls its `.toggle()` method. The preference handles persistence and auto-wiring to `<game-audio>`. Pair with a `<game-icon>` to show the current state:
@@ -311,35 +340,36 @@ Custom commands use the `--` prefix per the Invoker Commands spec. The shell req
 
 The shell exposes all game state as public `Signal.State` properties directly on the element. Descendant components access them via `this.shell`.
 
-| Signal              | Type                      | Description                                    |
-| ------------------- | ------------------------- | ---------------------------------------------- | -------------------------------------------------- |
-| `scene`             | `Signal.State<string>`    | Current game scene                             |
-| `round`             | `Signal.State<number>`    | Current round (1-indexed)                      |
-| `rounds`            | `Signal.State<number>`    | Total rounds configured                        |
-| `score`             | `Signal.State<number>`    | Accumulated score                              |
-| `roundScores`       | `Signal.State<number[]>`  | Per-round scores                               |
-| `roundScore`        | `Signal.Computed<number>` | Score from the most recent round               |
-| `bestRoundScore`    | `Signal.Computed<number>` | Highest individual round score                 |
-| `worstRoundScore`   | `Signal.Computed<number>` | Lowest individual round score                  |
-| `scoreOrder`        | `Signal.State<string>`    | `"asc"` or `"desc"`                            |
-| `lastRoundPassed`   | `Signal.State<boolean     | null>`                                         | Did last round pass?                               |
-| `lastFeedback`      | `Signal.State<string      | null>`                                         | Feedback from last round                           |
-| `passStreak`        | `Signal.State<number>`    | Current consecutive pass streak                |
-| `failStreak`        | `Signal.State<number>`    | Current consecutive fail streak                |
-| `peakPassStreak`    | `Signal.State<number>`    | Highest pass streak reached this game          |
-| `peakFailStreak`    | `Signal.State<number>`    | Highest fail streak reached this game          |
-| `difficulty`        | `Signal.State<object>`    | Current difficulty from director               |
-| `stats`             | `Signal.State<object>`    | Arbitrary stats map                            |
-| `storageKey`        | `Signal.State<string>`    | localStorage key                               |
-| `gameId`            | `Signal.State<string>`    | Game identifier                                |
-| `betweenDelay`      | `Signal.State<number>`    | Ms between rounds                              |
-| `encodedResult`     | `Signal.State<string      | null>`                                         | Encoded result for sharing                         |
-| `groupId`           | `Signal.State<string      | null>`                                         | Group identifier                                   |
-| `groupName`         | `Signal.State<string      | null>`                                         | Group display name                                 |
-| `challenge`         | `Signal.State<object      | null>`                                         | Challenge data                                     |
-| `formatScoreSignal` | `Signal.State<function    | null>`                                         | Score formatting function (set via `.formatScore`) |
-| `spriteSheet`       | `Signal.State<string>`    | Sprite sheet URL from `sprite-sheet` attribute |
-| `muted`             | `Signal.State<boolean>`   | Whether sound is muted; synced by `<game-preference key="sound">` |
+| Signal              | Type                      | Description                                                                |
+| ------------------- | ------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------- |
+| `scene`             | `Signal.State<string>`    | Current game scene                                                         |
+| `round`             | `Signal.State<number>`    | Current round (1-indexed)                                                  |
+| `rounds`            | `Signal.State<number>`    | Total rounds configured                                                    |
+| `score`             | `Signal.State<number>`    | Accumulated score                                                          |
+| `roundScores`       | `Signal.State<number[]>`  | Per-round scores                                                           |
+| `roundScore`        | `Signal.Computed<number>` | Score from the most recent round                                           |
+| `bestRoundScore`    | `Signal.Computed<number>` | Highest individual round score                                             |
+| `worstRoundScore`   | `Signal.Computed<number>` | Lowest individual round score                                              |
+| `scoreOrder`        | `Signal.State<string>`    | `"asc"` or `"desc"`                                                        |
+| `lastRoundPassed`   | `Signal.State<boolean     | null>`                                                                     | Did last round pass?                               |
+| `lastFeedback`      | `Signal.State<string      | null>`                                                                     | Feedback from last round                           |
+| `passStreak`        | `Signal.State<number>`    | Current consecutive pass streak                                            |
+| `failStreak`        | `Signal.State<number>`    | Current consecutive fail streak                                            |
+| `peakPassStreak`    | `Signal.State<number>`    | Highest pass streak reached this game                                      |
+| `peakFailStreak`    | `Signal.State<number>`    | Highest fail streak reached this game                                      |
+| `difficulty`        | `Signal.State<object>`    | Current difficulty from director                                           |
+| `stats`             | `Signal.State<object>`    | Arbitrary stats map                                                        |
+| `storageKey`        | `Signal.State<string>`    | localStorage key                                                           |
+| `gameId`            | `Signal.State<string>`    | Game identifier                                                            |
+| `betweenDelay`      | `Signal.State<number>`    | Ms between rounds                                                          |
+| `encodedResult`     | `Signal.State<string      | null>`                                                                     | Encoded result for sharing                         |
+| `groupId`           | `Signal.State<string      | null>`                                                                     | Group identifier                                   |
+| `groupName`         | `Signal.State<string      | null>`                                                                     | Group display name                                 |
+| `challenge`         | `Signal.State<object      | null>`                                                                     | Challenge data                                     |
+| `formatScoreSignal` | `Signal.State<function    | null>`                                                                     | Score formatting function (set via `.formatScore`) |
+| `spriteSheet`       | `Signal.State<string>`    | Sprite sheet URL from `sprite-sheet` attribute                             |
+| `muted`             | `Signal.State<boolean>`   | Whether sound is muted; synced by `<game-preference key="sound">`          |
+| `day`               | `Signal.Computed<number>` | Today's day number (day 1 = 2026-01-01). Useful with the `daily` attribute |
 
 Components access these via `effectCallback`:
 
@@ -561,22 +591,22 @@ GameShell.define("my-shell", registry); // scoped registry
 
 The shell listens for the following events bubbling up from descendant components:
 
-| Event                  | Trigger                                   | Effect                                                                                              |
-| ---------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `game-round-pass`      | A round was completed successfully        | Records the score, advances the round counter, transitions to `between` then next round or `result` |
-| `game-round-fail`      | A round was failed                        | If `retry` is false, consumes a round. Optionally records a penalty.                                |
-| `game-timer-expired`   | The round timer ran out                   | Equivalent to a fail with no retry -- ends the current round                                        |
-| `game-stat-update`     | A child wants to update a stat            | Merges `{ key: value }` into the `stats` signal                                                     |
-| `game-start-request`   | User clicked a start button               | Calls `.start()`                                                                                    |
-| `game-restart-request` | User clicked a restart button             | Resets state and calls `.start()`                                                                   |
-| `game-practice-start`  | User entered practice mode                | Sets `scene` signal to `"practice"`                                                                 |
-| `game-complete`        | Game mechanics signal completion directly | Sets `scene` to `"result"`, optionally records a final score                                        |
-| `game-pause-request`   | A child requests a pause                  | Calls `.pause()`                                                                                    |
-| `game-resume-request`  | A child requests a resume                 | Calls `.resume()`                                                                                   |
-| `game-next-round`      | A child requests immediate round advance  | Advances to the next round immediately when in `between`                                            |
-| `game-trophy-unlock`   | A `<game-trophy>` was unlocked            | Records the trophy id in the shell's internal set and persists to localStorage                      |
-| `game-collection-add`  | A child wants to add to a collection      | Calls `addToCollection(collection, itemId)` and persists to localStorage                            |
-| `game-collection-remove` | A child wants to remove from a collection | Calls `removeFromCollection(collection, itemId)` and persists to localStorage                     |
+| Event                    | Trigger                                   | Effect                                                                                              |
+| ------------------------ | ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `game-round-pass`        | A round was completed successfully        | Records the score, advances the round counter, transitions to `between` then next round or `result` |
+| `game-round-fail`        | A round was failed                        | If `retry` is false, consumes a round. Optionally records a penalty.                                |
+| `game-timer-expired`     | The round timer ran out                   | Equivalent to a fail with no retry -- ends the current round                                        |
+| `game-stat-update`       | A child wants to update a stat            | Merges `{ key: value }` into the `stats` signal                                                     |
+| `game-start-request`     | User clicked a start button               | Calls `.start()`                                                                                    |
+| `game-restart-request`   | User clicked a restart button             | Resets state and calls `.start()`                                                                   |
+| `game-practice-start`    | User entered practice mode                | Sets `scene` signal to `"practice"`                                                                 |
+| `game-complete`          | Game mechanics signal completion directly | Sets `scene` to `"result"`, optionally records a final score                                        |
+| `game-pause-request`     | A child requests a pause                  | Calls `.pause()`                                                                                    |
+| `game-resume-request`    | A child requests a resume                 | Calls `.resume()`                                                                                   |
+| `game-next-round`        | A child requests immediate round advance  | Advances to the next round immediately when in `between`                                            |
+| `game-trophy-unlock`     | A `<game-trophy>` was unlocked            | Records the trophy id in the shell's internal set and persists to localStorage                      |
+| `game-collection-add`    | A child wants to add to a collection      | Calls `addToCollection(collection, itemId)` and persists to localStorage                            |
+| `game-collection-remove` | A child wants to remove from a collection | Calls `removeFromCollection(collection, itemId)` and persists to localStorage                       |
 
 ---
 

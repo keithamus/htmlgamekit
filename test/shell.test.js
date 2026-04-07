@@ -537,4 +537,131 @@ describe("GameShell", () => {
       assert.equal(shell.storageKey.get(), "test-solo");
     });
   });
+
+  describe("save-stats=persist", () => {
+    async function createPersist(attrs = "") {
+      return createShell(
+        `rounds="3" save-stats="persist" game-id="persist-test" storage-key="persist-test" between-delay="0" ${attrs}`,
+      );
+    }
+
+    it("preserves stats across start()", async () => {
+      const shell = await createPersist();
+      shell.start();
+      shell.stats.set({ totalGames: 5, bestStreak: 3 });
+      shell.start();
+      const s = shell.stats.get();
+      assert.equal(s.totalGames, 5);
+      assert.equal(s.bestStreak, 3);
+    });
+
+    it("persists stats to localStorage", async () => {
+      const shell = await createPersist();
+      shell.start();
+      shell.stats.set({ wins: 10 });
+      await settle();
+      const stored = JSON.parse(localStorage.getItem("persist-test-stats"));
+      assert.equal(stored.wins, 10);
+    });
+
+    it("restores stats from localStorage on load", async () => {
+      localStorage.setItem(
+        "persist-test-stats",
+        JSON.stringify({ wins: 7 }),
+      );
+      const shell = await createPersist();
+      assert.equal(shell.stats.get().wins, 7);
+    });
+  });
+
+  describe("daily", () => {
+    function today() {
+      return Math.floor((Date.now() - Date.UTC(2025, 11, 31)) / 864e5);
+    }
+
+    async function createDaily(attrs = "") {
+      return createShell(
+        `rounds="0" save-stats="daily" game-id="daily-test" storage-key="daily-test" between-delay="0" ${attrs}`,
+      );
+    }
+
+    it("exposes a day signal with today's day number", async () => {
+      const shell = await createDaily();
+      assert.equal(shell.day.get(), today());
+    });
+
+    it("start() preserves stats for the current day", async () => {
+      const stats = { score: 5, _day: today() };
+      localStorage.setItem("daily-test-stats", JSON.stringify(stats));
+      const shell = await createDaily();
+      // Shell should auto-skip intro and call start() since stats exist for today.
+      assert.equal(shell.scene.get(), "playing");
+      const restored = shell.stats.get();
+      assert.equal(restored.score, 5);
+      assert.equal(restored._day, today());
+    });
+
+    it("start() clears stats from a different day", async () => {
+      const stats = { score: 5, _day: today() - 1 };
+      localStorage.setItem("daily-test-stats", JSON.stringify(stats));
+      const shell = await createDaily();
+      // Old-day stats should not be restored; shell shows ready (intro).
+      assert.equal(shell.scene.get(), "ready");
+      assert.deepEqual(shell.stats.get(), {});
+    });
+
+    it("auto-skips intro when in-progress daily stats exist", async () => {
+      const stats = { guesses: ["hello"], _day: today() };
+      localStorage.setItem("daily-test-stats", JSON.stringify(stats));
+      const shell = await createDaily();
+      assert.equal(shell.scene.get(), "playing");
+      assert.deepEqual(shell.stats.get().guesses, ["hello"]);
+    });
+
+    it("shows intro when no stats exist for today", async () => {
+      const shell = await createDaily();
+      assert.equal(shell.scene.get(), "ready");
+    });
+
+    it("auto-stamps _day into stats on persist", async () => {
+      const shell = await createDaily();
+      shell.start();
+      shell.stats.set({ guesses: ["test"] });
+      await settle();
+      const stored = JSON.parse(localStorage.getItem("daily-test-stats"));
+      assert.equal(stored._day, today());
+      assert.deepEqual(stored.guesses, ["test"]);
+    });
+
+    it("stamps _day into result localStorage on result", async () => {
+      const shell = await createDaily();
+      shell.start();
+      shell.dispatchEvent(new GameCompleteEvent(42));
+      await settle();
+      const stored = JSON.parse(localStorage.getItem("daily-test"));
+      assert.equal(stored._day, today());
+      assert.equal(stored.score, 42);
+    });
+
+    it("clears stale result from a previous day on restore", async () => {
+      localStorage.setItem(
+        "daily-test",
+        JSON.stringify({ score: 10, _day: today() - 1 }),
+      );
+      const shell = await createDaily();
+      // Stale result should be cleared; shell should show ready (intro).
+      assert.equal(shell.scene.get(), "ready");
+      assert.isNull(localStorage.getItem("daily-test"));
+    });
+
+    it("restores result from today", async () => {
+      localStorage.setItem(
+        "daily-test",
+        JSON.stringify({ score: 10, _day: today() }),
+      );
+      const shell = await createDaily();
+      assert.equal(shell.scene.get(), "result");
+      assert.equal(shell.score.get(), 10);
+    });
+  });
 });

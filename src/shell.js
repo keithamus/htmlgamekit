@@ -205,7 +205,12 @@ export default class GameShell extends HTMLElement {
     "storage-key": { type: "string?", prop: "storageKeyAttr" },
     "sprite-sheet": { type: "string?", prop: "spriteSheetAttr" },
     "session-save": { type: "boolean" },
-    "save-stats": { type: "boolean" },
+    "save-stats": {
+      type: "enum",
+      values: ["persist", "daily"],
+      missing: null,
+      invalid: "auto",
+    },
     demo: { type: "boolean" },
     group: { type: "string?" },
     progression: { type: "string?" },
@@ -248,6 +253,9 @@ export default class GameShell extends HTMLElement {
   formatScoreSignal = new Signal.State(null);
   spriteSheet = new Signal.State("");
   muted = new Signal.State(false);
+  day = new Signal.Computed(() =>
+    Math.floor((Date.now() - Date.UTC(2025, 11, 31)) / 864e5),
+  );
 
   #shadow = this.attachShadow({ mode: "open", slotAssignment: "manual" });
   #slot = (() => {
@@ -617,9 +625,15 @@ export default class GameShell extends HTMLElement {
     this.#loadTrophies();
 
     if (this.saveStats) {
-      const saved = storageGetJson(localStorage, `${this.storageKey.get()}-stats`);
+      const sk = `${this.storageKey.get()}-stats`;
+      const saved = storageGetJson(localStorage, sk);
       if (saved && typeof saved === "object") {
-        this.stats.set(saved);
+        // For daily games, discard stale stats from a previous day.
+        if (this.saveStats === "daily" && saved._day !== this.day.get()) {
+          storageRemove(localStorage, sk);
+        } else {
+          this.stats.set(saved);
+        }
       }
     }
 
@@ -726,7 +740,8 @@ export default class GameShell extends HTMLElement {
       if (!sk) return;
       const s = this.stats.get();
       if (s && Object.keys(s).length) {
-        storagePutJson(localStorage, `${sk}-stats`, s);
+        const out = this.saveStats === "daily" ? { ...s, _day: this.day.get() } : s;
+        storagePutJson(localStorage, `${sk}-stats`, out);
       }
     });
 
@@ -944,6 +959,17 @@ export default class GameShell extends HTMLElement {
     if (this.#restoreSession()) return;
     if (this.#restoreResult()) return;
 
+    // For daily games, if stats exist for today (in-progress game),
+    // skip the intro and go straight to playing.
+    if (this.saveStats === "daily") {
+      const sk = this.storageKey.get();
+      const saved = storageGetJson(localStorage, `${sk}-stats`);
+      if (saved && saved._day === this.day.get()) {
+        this.start();
+        return;
+      }
+    }
+
     if (this.demo) {
       this.scene.set("demo");
     } else {
@@ -971,8 +997,16 @@ export default class GameShell extends HTMLElement {
   }
 
   #restoreResult() {
-    const saved = storageGetJson(localStorage, this.storageKey.get());
+    const sk = this.storageKey.get();
+    const saved = storageGetJson(localStorage, sk);
     if (!saved || typeof saved.score === "undefined") return false;
+
+    // For daily games, discard stale results from a previous day.
+    if (this.saveStats === "daily" && saved._day !== this.day.get()) {
+      storageRemove(localStorage, sk);
+      return false;
+    }
+
     this.scene.set("result");
     this.score.set(saved.score);
     this.round.set(saved.round || this.rounds.get());
@@ -1152,17 +1186,31 @@ export default class GameShell extends HTMLElement {
       history.pushState(null, "", url);
     }
 
-    storagePutJson(localStorage, this.storageKey.get(), {
+    const result = {
       score: this.score.get(),
       round: this.round.get(),
       roundScores: this.roundScores.get(),
       encoded,
-    });
+    };
+    if (this.saveStats === "daily") result._day = this.day.get();
+    storagePutJson(localStorage, this.storageKey.get(), result);
   }
 
   start() {
     clearTimeout(this.#betweenTimer);
     const sk = this.storageKey.get();
+
+    // For persist/daily modes, snapshot stats before clearing storage
+    // so they survive a start() call.
+    let keepStats = null;
+    const mode = this.saveStats;
+    if (mode === "persist") {
+      keepStats = this.stats.get();
+    } else if (mode === "daily") {
+      const saved = storageGetJson(localStorage, `${sk}-stats`);
+      if (saved && saved._day === this.day.get()) keepStats = saved;
+    }
+
     storageRemove(localStorage, sk);
     storageRemove(localStorage, `${sk}-stats`);
     storageRemove(sessionStorage, `${sk}-session`);
@@ -1178,7 +1226,7 @@ export default class GameShell extends HTMLElement {
     this.failStreak.set(0);
     this.peakPassStreak.set(0);
     this.peakFailStreak.set(0);
-    this.stats.set({});
+    this.stats.set(keepStats ?? {});
 
     if (this.#progression) {
       const diff = this.#progression.init(this.roundsAttr);
