@@ -1,6 +1,4 @@
-// iOS maps audio session type to AVAudioSession category. Default "ambient"
-// is muted by the silent switch while "playback" is not.
-if ("audioSession" in navigator) navigator.audioSession.type = "playback";
+if ("audioSession" in navigator) navigator.audioSession.type = "ambient";
 
 // Prefix fallback for older Safari/WebKit.
 const AudioCtor = window.AudioContext ?? window.webkitAudioContext;
