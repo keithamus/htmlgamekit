@@ -26,6 +26,17 @@ describe("game-audio", () => {
     assert.equal(el.volume, 1);
   });
 
+  it("reflects declarative noise shaping attributes", () => {
+    const el = document.createElement("game-sample");
+    el.setAttribute("noise-decay", "0.12");
+    el.setAttribute("noise-filter", "highpass");
+    el.setAttribute("noise-frequency", "1400");
+
+    assert.equal(el.noiseDecay, 0.12);
+    assert.equal(el.noiseFilter, "highpass");
+    assert.equal(el.noiseFrequency, 1400);
+  });
+
   describe("muting", () => {
     it("triggerCallback does NOT call play on samples when muted", async () => {
       document.body.innerHTML = `

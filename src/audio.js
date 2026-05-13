@@ -60,6 +60,9 @@ export class GameSample extends HTMLElement {
     gain: { type: "number", default: 0.35 },
     duration: { type: "string?" },
     notes: { type: "string?" },
+    "noise-decay": { type: "number?" },
+    "noise-filter": { type: "string?" },
+    "noise-frequency": { type: "number?" },
     vibrate: { type: "string", default: "auto" },
     scale: { type: "string?" },
     "scale-root": { type: "number", default: 220 },
@@ -123,7 +126,11 @@ export class GameSample extends HTMLElement {
     const synth = SYNTHS[type] || SYNTHS.marimba;
 
     if (type === "noise") {
-      synthNoise(ctx, 0, gain, duration ?? 0.02);
+      synthNoise(ctx, 0, gain, duration ?? 0.02, {
+        decay: this.noiseDecay,
+        filter: this.noiseFilter,
+        frequency: this.noiseFrequency,
+      });
       return;
     }
     for (const { freq, when } of notes) {
@@ -172,7 +179,11 @@ export class GameSample extends HTMLElement {
     }
 
     if (type === "noise") {
-      synthNoise(ctx, 0, gain, duration ?? 0.02);
+      synthNoise(ctx, 0, gain, duration ?? 0.02, {
+        decay: this.noiseDecay,
+        filter: this.noiseFilter,
+        frequency: this.noiseFrequency,
+      });
       return;
     }
 

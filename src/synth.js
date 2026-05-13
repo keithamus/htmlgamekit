@@ -68,17 +68,30 @@ export function synthBeep(ctx, freq, when, gain, duration = 0.08) {
   osc.stop(t + duration + 0.01);
 }
 
-export function synthNoise(ctx, when, gain, duration = 0.02) {
+export function synthNoise(ctx, when, gain, duration = 0.02, options = {}) {
   const t = ctx.currentTime + when;
   const buf = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
   const data = buf.getChannelData(0);
+  const decay = options.decay;
   for (let i = 0; i < data.length; i++) {
-    data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+    const envelope =
+      decay == null
+        ? 1 - i / data.length
+        : Math.exp(-i / (data.length * decay));
+    data[i] = (Math.random() * 2 - 1) * envelope;
   }
   const src = ctx.createBufferSource();
   const env = ctx.createGain();
   src.buffer = buf;
-  src.connect(env);
+  const filterType = options.filter;
+  if (filterType) {
+    const filter = ctx.createBiquadFilter();
+    filter.type = filterType;
+    filter.frequency.value = options.frequency ?? 1000;
+    src.connect(filter).connect(env);
+  } else {
+    src.connect(env);
+  }
   env.connect(ctx.destination);
   env.gain.setValueAtTime(gain, t);
   src.start(t);
