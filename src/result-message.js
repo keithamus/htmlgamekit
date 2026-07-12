@@ -13,14 +13,13 @@ import { matchesConditions } from "./conditions.js";
 export default class GameResultMessage extends GameComponent {
   static template = `<span part="output"></span>`;
 
-  #output;
-  #options = [];
   #states = this.attachInternals().states;
 
-  connectedCallback() {
-    this.#output = this.shadowRoot.querySelector("[part=output]");
-    this.#options = [...this.querySelectorAll("option")];
-    super.connectedCallback();
+  get #output() {
+    return this.shadowRoot.querySelector("[part=output]");
+  }
+  get #options() {
+    return [...this.querySelectorAll("option")];
   }
 
   effectCallback({ scene }) {

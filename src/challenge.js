@@ -34,6 +34,8 @@ const TAUNTS = [
  * @csspart label - The "Their score" heading
  * @csspart score - The opponent's formatted score
  * @csspart taunt - The randomly selected taunt text
+ *
+ * @cssState active - A decoded challenge is present and the display is shown
  */
 export default class GameChallenge extends GameComponent {
   static styles = css`
@@ -84,13 +86,11 @@ export default class GameChallenge extends GameComponent {
     this.#formatScoreFn = fn;
   }
 
-  #scoreEl = null;
-  #tauntEl = null;
-
-  connectedCallback() {
-    this.#scoreEl = this.shadowRoot.querySelector(".score");
-    this.#tauntEl = this.shadowRoot.querySelector(".taunt");
-    super.connectedCallback();
+  get #scoreEl() {
+    return this.shadowRoot.querySelector(".score");
+  }
+  get #tauntEl() {
+    return this.shadowRoot.querySelector(".taunt");
   }
 
   effectCallback({ challenge, formatScoreSignal }) {

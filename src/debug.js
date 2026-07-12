@@ -139,6 +139,11 @@ export default class GameDebug extends HTMLElement {
     open: { type: "boolean" },
   };
 
+  static define(tag = "game-debug", registry = customElements) {
+    initAttrs(this);
+    registry.define(tag, this);
+  }
+
   #shadow = this.attachShadow({ mode: "open" });
   #shell = null;
   #graphNodes = [];
@@ -147,11 +152,6 @@ export default class GameDebug extends HTMLElement {
   #canvas = null;
   #stateList = null;
   #resizeObs = null;
-
-  static define(tag = "game-debug", registry = customElements) {
-    initAttrs(this);
-    registry.define(tag, this);
-  }
 
   connectedCallback() {
     this.#shell = this.closest("game-shell");

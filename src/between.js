@@ -48,6 +48,11 @@ export default class GameBetween extends GameComponent {
   #states = this.attachInternals().states;
   #countdownInterval = 0;
 
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.#stopCountdown();
+  }
+
   effectCallback({ scene }) {
     if (scene.get() === "between") {
       this.#populate(this.shell);
@@ -55,11 +60,6 @@ export default class GameBetween extends GameComponent {
     } else {
       this.#stopCountdown();
     }
-  }
-
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    this.#stopCountdown();
   }
 
   #startCountdown() {

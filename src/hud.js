@@ -47,13 +47,11 @@ export class GameRoundCounter extends GameComponent {
     `<span>Round <span class="val"></span></span>` +
     `<progress value="0" max="1"></progress>`;
 
-  #val = null;
-  #bar = null;
-
-  connectedCallback() {
-    this.#val = this.shadowRoot.querySelector(".val");
-    this.#bar = this.shadowRoot.querySelector("progress");
-    super.connectedCallback();
+  get #val() {
+    return this.shadowRoot.querySelector(".val");
+  }
+  get #bar() {
+    return this.shadowRoot.querySelector("progress");
   }
 
   effectCallback({ round, rounds, difficulty }) {
@@ -106,11 +104,8 @@ export class GameStat extends GameComponent {
 
   static template = `<span class="label"><slot></slot></span> <span class="val"></span>`;
 
-  #valEl = null;
-
-  connectedCallback() {
-    this.#valEl = this.shadowRoot.querySelector(".val");
-    super.connectedCallback();
+  get #valEl() {
+    return this.shadowRoot.querySelector(".val");
   }
 
   effectCallback({ stats }) {

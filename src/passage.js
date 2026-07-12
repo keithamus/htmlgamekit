@@ -39,11 +39,11 @@ export default class GamePassage extends GameComponent {
 
   static template = null;
 
-  #active = false;
-
   static define(tag = "game-passage", registry = customElements) {
     super.define(tag, registry);
   }
+
+  #active = false;
 
   effectCallback() {
     const shell = this.shell;

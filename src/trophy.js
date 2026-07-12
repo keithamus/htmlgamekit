@@ -27,6 +27,7 @@ export class GameTrophyUnlockEvent extends Event {
  * @csspart tooltip - The description tooltip
  *
  * @cssState unlocked - The trophy has been unlocked
+ * @cssState show-tip - Tooltip is temporarily shown after a click
  */
 export default class GameTrophy extends GameComponent {
   static attrs = {
@@ -107,7 +108,12 @@ export default class GameTrophy extends GameComponent {
     return this.id;
   }
 
+  get unlocked() {
+    return this.#states.has("unlocked");
+  }
+
   connectedCallback() {
+    super.connectedCallback();
     const iconEl = this.shadowRoot.querySelector(".icon");
     const nameEl = this.shadowRoot.querySelector(".name");
     const tipEl = this.shadowRoot.querySelector(".tooltip");
@@ -134,8 +140,6 @@ export default class GameTrophy extends GameComponent {
       },
       { signal: this.signal },
     );
-
-    super.connectedCallback();
   }
 
   effectCallback({ scene }) {
@@ -149,10 +153,6 @@ export default class GameTrophy extends GameComponent {
     if (this.#states.has("unlocked")) return;
     this.#states.add("unlocked");
     this.dispatchEvent(new GameTrophyUnlockEvent(this.id, this.name));
-  }
-
-  get unlocked() {
-    return this.#states.has("unlocked");
   }
 
   #hasConditions() {

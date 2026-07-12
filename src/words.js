@@ -51,6 +51,7 @@ export default class GameWordSource extends GameComponent {
   #validated = new WeakSet();
 
   connectedCallback() {
+    super.connectedCallback();
     this.#provider = new ContextProvider(this, gameWordContext, "");
     if (this.validate) {
       const shell = this.shell;
@@ -67,7 +68,6 @@ export default class GameWordSource extends GameComponent {
         );
       }
     }
-    super.connectedCallback();
   }
 
   effectCallback({ scene, round, roundScores }) {

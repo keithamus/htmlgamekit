@@ -127,10 +127,15 @@ export default class GameTileInput extends GameComponent {
   static template = `<input type="text" autocomplete="off" autocorrect="off"
     autocapitalize="off" spellcheck="false"><div class="tiles"></div>`;
 
-  #input;
-  #tilesEl;
   #tiles = [];
   #marks = new Map();
+
+  get #input() {
+    return this.shadowRoot.querySelector("input");
+  }
+  get #tilesEl() {
+    return this.shadowRoot.querySelector(".tiles");
+  }
 
   get value() {
     return this.#input?.value || "";
@@ -141,8 +146,7 @@ export default class GameTileInput extends GameComponent {
   }
 
   connectedCallback() {
-    this.#input = this.shadowRoot.querySelector("input");
-    this.#tilesEl = this.shadowRoot.querySelector(".tiles");
+    super.connectedCallback();
     this.#buildTiles();
 
     this.#input.maxLength = Math.max(0, this.length);
@@ -182,8 +186,6 @@ export default class GameTileInput extends GameComponent {
       },
       { signal: this.signal },
     );
-
-    super.connectedCallback();
   }
 
   effectCallback({ scene, round }) {

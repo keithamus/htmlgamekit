@@ -62,9 +62,25 @@ export default class GameResultStat extends GameComponent {
   #formatFn = null;
   #states = this.attachInternals().states;
   #thresholds = [];
+  #raf = 0;
 
   set formatScore(fn) {
     this.#formatFn = fn;
+  }
+
+  get #valueEl() {
+    return this.shadowRoot.querySelector(".value");
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.#parseThresholds();
+    this.shadowRoot.querySelector(".label").textContent = this.label;
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    cancelAnimationFrame(this.#raf);
   }
 
   attributeChanged(name) {
@@ -72,15 +88,6 @@ export default class GameResultStat extends GameComponent {
       const el = this.shadowRoot?.querySelector(".label");
       if (el) el.textContent = this.label;
     }
-  }
-
-  #valueEl = null;
-
-  connectedCallback() {
-    this.#parseThresholds();
-    this.shadowRoot.querySelector(".label").textContent = this.label;
-    this.#valueEl = this.shadowRoot.querySelector(".value");
-    super.connectedCallback();
   }
 
   effectCallback({ scene, score, formatScoreSignal }) {
@@ -135,13 +142,6 @@ export default class GameResultStat extends GameComponent {
     if (rounds && score === rounds) {
       this.#states.add("perfect");
     }
-  }
-
-  #raf = 0;
-
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    cancelAnimationFrame(this.#raf);
   }
 
   #animateCountUp(target, el, fmt) {

@@ -46,6 +46,7 @@ export default class GameQuiz extends GameComponent {
   #currentFieldset = null;
 
   connectedCallback() {
+    super.connectedCallback();
     this.#indexQuestions();
     this.addEventListener(
       "change",
@@ -57,7 +58,6 @@ export default class GameQuiz extends GameComponent {
       },
       { signal: this.signal },
     );
-    super.connectedCallback();
   }
 
   effectCallback({ scene, round, difficulty }) {

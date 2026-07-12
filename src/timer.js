@@ -87,6 +87,11 @@ export default class GameTimer extends GameComponent {
     super.connectedCallback();
   }
 
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.stop();
+  }
+
   effectCallback({ scene }) {
     const s = scene.get();
     const prev = this.#prevScene;
@@ -101,11 +106,6 @@ export default class GameTimer extends GameComponent {
     } else if (s !== "playing" && s !== "paused" && this.#running) {
       this.stop();
     }
-  }
-
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    this.stop();
   }
 
   start() {

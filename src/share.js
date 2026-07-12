@@ -74,6 +74,7 @@ export default class GameShare extends GameComponent {
     `<textarea part="fallback" readonly></textarea>`;
 
   connectedCallback() {
+    super.connectedCallback();
     const btn = this.shadowRoot.querySelector("button");
     const fallback = this.shadowRoot.querySelector("textarea");
 
@@ -116,8 +117,6 @@ export default class GameShare extends GameComponent {
       },
       { signal: this.signal },
     );
-
-    super.connectedCallback();
   }
 
   #buildText() {

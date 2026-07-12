@@ -98,6 +98,7 @@ export default class GameScoreForm extends GameComponent {
   #msgEl;
 
   connectedCallback() {
+    super.connectedCallback();
     this.#form = this.shadowRoot.querySelector("form");
     this.#nameInput = this.shadowRoot.querySelector("input");
     this.#submitBtn = this.shadowRoot.querySelector("button");
@@ -130,8 +131,6 @@ export default class GameScoreForm extends GameComponent {
       },
       { signal: this.signal },
     );
-
-    super.connectedCallback();
   }
 
   resultCallback(shell) {

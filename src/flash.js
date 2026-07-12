@@ -37,8 +37,13 @@ export default class GameFlash extends GameComponent {
   #timer = 0;
 
   connectedCallback() {
-    this.setAttribute("aria-hidden", "true");
     super.connectedCallback();
+    this.setAttribute("aria-hidden", "true");
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    clearTimeout(this.#timer);
   }
 
   effectCallback({ scene, lastRoundPassed }) {
@@ -50,10 +55,5 @@ export default class GameFlash extends GameComponent {
       this.#states.delete("pass");
       this.#states.delete("fail");
     }, 300);
-  }
-
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    clearTimeout(this.#timer);
   }
 }

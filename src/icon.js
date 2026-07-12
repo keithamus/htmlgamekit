@@ -34,11 +34,8 @@ export default class GameIcon extends GameComponent {
 
   static template = "";
 
-  #options = [];
-
-  connectedCallback() {
-    this.#options = [...this.querySelectorAll("option")];
-    super.connectedCallback();
+  get #options() {
+    return [...this.querySelectorAll("option")];
   }
 
   effectCallback({ spriteSheet }) {
