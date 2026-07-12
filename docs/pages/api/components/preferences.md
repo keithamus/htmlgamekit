@@ -50,11 +50,11 @@ shell.addEventListener("game-preference-change", (e) => {
 
 Auto-wiring is handled by each [`<game-preference>`]({{ site.baseurl }}/api/components/preference/) element, not by the panel. The following keys are auto-wired:
 
-| Key         | Auto-Wired To           | Effect                                    |
-| ----------- | ----------------------- | ----------------------------------------- |
-| `sound`     | `<game-audio>`, shell   | Toggles `muted` attribute and `shell.muted` signal |
-| `volume`    | `<game-audio>`          | Sets the `volume` attribute (value / 100) |
-| `vibration` | `<game-audio>`          | Toggles the `vibration` attribute         |
+| Key         | Auto-Wired To         | Effect                                             |
+| ----------- | --------------------- | -------------------------------------------------- |
+| `sound`     | `<game-audio>`, shell | Toggles `muted` attribute and `shell.muted` signal |
+| `volume`    | `<game-audio>`        | Sets the `volume` attribute (value / 100)          |
+| `vibration` | `<game-audio>`        | Toggles the `vibration` attribute                  |
 
 All other keys (e.g. `dark-mode`) dispatch `game-preference-change` events for your game code to handle.
 
@@ -75,25 +75,11 @@ Persistence is handled by each `<game-preference>` element. Values are stored as
   <game-preferences id="prefs" popover>
     <game-preference key="sound" label="Sound" default="true">
     </game-preference>
-    <game-preference
-      key="vibration"
-      label="Vibration"
-      default="true"
-    >
+    <game-preference key="vibration" label="Vibration" default="true">
     </game-preference>
-    <game-preference
-      key="volume"
-      label="Volume"
-      min="0"
-      max="100"
-      default="80"
-    >
+    <game-preference key="volume" label="Volume" min="0" max="100" default="80">
     </game-preference>
-    <game-preference
-      key="dark-mode"
-      label="Dark Mode"
-      default="false"
-    >
+    <game-preference key="dark-mode" label="Dark Mode" default="false">
     </game-preference>
   </game-preferences>
 

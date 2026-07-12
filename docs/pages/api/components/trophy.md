@@ -134,10 +134,7 @@ Unlocked trophy IDs are stored as a JSON array in `localStorage` under the key `
 When the shell has a [`trophy-url`]({{ site.baseurl }}/api/game-shell/) attribute, trophies are also persisted to a remote server so they survive across devices and browsers.
 
 ```html
-<game-shell
-  game-id="my-game"
-  trophy-url="https://trophies.htmlgamekit.dev"
->
+<game-shell game-id="my-game" trophy-url="https://trophies.htmlgamekit.dev">
   <game-trophy id="first-win" name="First Win" when-min-score="1"></game-trophy>
 </game-shell>
 ```

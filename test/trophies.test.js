@@ -85,9 +85,7 @@ describe("trophies", () => {
             Promise.resolve({
               player: "uuid-abc",
               game: "my-game",
-              trophies: [
-                { id: "gold", unlocked_at: "2026-04-05 12:00:00" },
-              ],
+              trophies: [{ id: "gold", unlocked_at: "2026-04-05 12:00:00" }],
             }),
         });
       };
@@ -280,10 +278,7 @@ describe("trophies", () => {
       await service.unlockTrophy("test");
 
       assert.equal(service.playerId, "assigned-uuid");
-      assert.equal(
-        localStorage.getItem("my-game-player-id"),
-        "assigned-uuid",
-      );
+      assert.equal(localStorage.getItem("my-game-player-id"), "assigned-uuid");
     });
 
     it("returns false on non-ok response", async () => {

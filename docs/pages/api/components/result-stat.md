@@ -25,6 +25,7 @@ A large score display for the results screen. Observes game signals and renders 
 - `"ms"` -- Round to integer and append "ms" (e.g. `342ms`)
 - `"Ndp"` -- Fixed-point with N decimal places (e.g. `"2dp"`)
 - `"plain"` -- Raw value as string (default)
+
 </dd>
 
 <dt><span class="badge attr">animate</span></dt>

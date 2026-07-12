@@ -51,6 +51,7 @@ Dispatched on every answer:
 
 - `key: "streak"`, `value: number` — Always dispatched. Current consecutive correct answer count (resets to 0 on wrong answer).
 - `key: "tier"`, `value: string` — Only dispatched when the `difficulty` signal has a `tierName` (i.e. a tier progression is active).
+
 </dd>
 
 </dl>

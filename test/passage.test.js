@@ -62,8 +62,14 @@ describe("game-passage", () => {
     const first = document.getElementById("first");
     const revisit = document.getElementById("revisit");
 
-    assert.isFalse(first.hidden, "first-visit content should be visible on first activation");
-    assert.isTrue(revisit.hidden, "revisit content should be hidden on first activation");
+    assert.isFalse(
+      first.hidden,
+      "first-visit content should be visible on first activation",
+    );
+    assert.isTrue(
+      revisit.hidden,
+      "revisit content should be hidden on first activation",
+    );
   });
 
   it("does not add to visited when passage is not active", async () => {

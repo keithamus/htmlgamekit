@@ -185,11 +185,11 @@ export default class GameDebug extends HTMLElement {
     header.className = "header";
     header.innerHTML =
       '<span class="title">Condition Tree</span>' +
-      '<kbd>F2</kbd>' +
+      "<kbd>F2</kbd>" +
       '<button class="close" aria-label="Close">\u00d7</button>';
-    header.querySelector(".close").addEventListener("click", () =>
-      this.#close(),
-    );
+    header
+      .querySelector(".close")
+      .addEventListener("click", () => this.#close());
     panel.appendChild(header);
 
     const stateSection = document.createElement("div");
@@ -402,10 +402,7 @@ export default class GameDebug extends HTMLElement {
 
       const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
       g.setAttribute("data-node-id", node.id);
-      g.setAttribute(
-        "class",
-        `node ${node.passing ? "passing" : "failing"}`,
-      );
+      g.setAttribute("class", `node ${node.passing ? "passing" : "failing"}`);
 
       const rect = document.createElementNS(
         "http://www.w3.org/2000/svg",

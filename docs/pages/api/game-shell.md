@@ -340,36 +340,36 @@ Custom commands use the `--` prefix per the Invoker Commands spec. The shell req
 
 The shell exposes all game state as public `Signal.State` properties directly on the element. Descendant components access them via `this.shell`.
 
-| Signal              | Type                      | Description                                                                |
+| Signal | Type | Description |
 | ------------------- | ------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------- |
-| `scene`             | `Signal.State<string>`    | Current game scene                                                         |
-| `round`             | `Signal.State<number>`    | Current round (1-indexed)                                                  |
-| `rounds`            | `Signal.State<number>`    | Total rounds configured                                                    |
-| `score`             | `Signal.State<number>`    | Accumulated score                                                          |
-| `roundScores`       | `Signal.State<number[]>`  | Per-round scores                                                           |
-| `roundScore`        | `Signal.Computed<number>` | Score from the most recent round                                           |
-| `bestRoundScore`    | `Signal.Computed<number>` | Highest individual round score                                             |
-| `worstRoundScore`   | `Signal.Computed<number>` | Lowest individual round score                                              |
-| `scoreOrder`        | `Signal.State<string>`    | `"asc"` or `"desc"`                                                        |
-| `lastRoundPassed`   | `Signal.State<boolean     | null>`                                                                     | Did last round pass?                               |
-| `lastFeedback`      | `Signal.State<string      | null>`                                                                     | Feedback from last round                           |
-| `passStreak`        | `Signal.State<number>`    | Current consecutive pass streak                                            |
-| `failStreak`        | `Signal.State<number>`    | Current consecutive fail streak                                            |
-| `peakPassStreak`    | `Signal.State<number>`    | Highest pass streak reached this game                                      |
-| `peakFailStreak`    | `Signal.State<number>`    | Highest fail streak reached this game                                      |
-| `difficulty`        | `Signal.State<object>`    | Current difficulty from director                                           |
-| `stats`             | `Signal.State<object>`    | Arbitrary stats map                                                        |
-| `storageKey`        | `Signal.State<string>`    | localStorage key                                                           |
-| `gameId`            | `Signal.State<string>`    | Game identifier                                                            |
-| `betweenDelay`      | `Signal.State<number>`    | Ms between rounds                                                          |
-| `encodedResult`     | `Signal.State<string      | null>`                                                                     | Encoded result for sharing                         |
-| `groupId`           | `Signal.State<string      | null>`                                                                     | Group identifier                                   |
-| `groupName`         | `Signal.State<string      | null>`                                                                     | Group display name                                 |
-| `challenge`         | `Signal.State<object      | null>`                                                                     | Challenge data                                     |
-| `formatScoreSignal` | `Signal.State<function    | null>`                                                                     | Score formatting function (set via `.formatScore`) |
-| `spriteSheet`       | `Signal.State<string>`    | Sprite sheet URL from `sprite-sheet` attribute                             |
-| `muted`             | `Signal.State<boolean>`   | Whether sound is muted; synced by `<game-preference key="sound">`          |
-| `day`               | `Signal.Computed<number>` | Today's day number (day 1 = 2026-01-01). Useful with the `daily` attribute |
+| `scene` | `Signal.State<string>` | Current game scene |
+| `round` | `Signal.State<number>` | Current round (1-indexed) |
+| `rounds` | `Signal.State<number>` | Total rounds configured |
+| `score` | `Signal.State<number>` | Accumulated score |
+| `roundScores` | `Signal.State<number[]>` | Per-round scores |
+| `roundScore` | `Signal.Computed<number>` | Score from the most recent round |
+| `bestRoundScore` | `Signal.Computed<number>` | Highest individual round score |
+| `worstRoundScore` | `Signal.Computed<number>` | Lowest individual round score |
+| `scoreOrder` | `Signal.State<string>` | `"asc"` or `"desc"` |
+| `lastRoundPassed` | `Signal.State<boolean     | null>` | Did last round pass? |
+| `lastFeedback` | `Signal.State<string      | null>` | Feedback from last round |
+| `passStreak` | `Signal.State<number>` | Current consecutive pass streak |
+| `failStreak` | `Signal.State<number>` | Current consecutive fail streak |
+| `peakPassStreak` | `Signal.State<number>` | Highest pass streak reached this game |
+| `peakFailStreak` | `Signal.State<number>` | Highest fail streak reached this game |
+| `difficulty` | `Signal.State<object>` | Current difficulty from director |
+| `stats` | `Signal.State<object>` | Arbitrary stats map |
+| `storageKey` | `Signal.State<string>` | localStorage key |
+| `gameId` | `Signal.State<string>` | Game identifier |
+| `betweenDelay` | `Signal.State<number>` | Ms between rounds |
+| `encodedResult` | `Signal.State<string      | null>` | Encoded result for sharing |
+| `groupId` | `Signal.State<string      | null>` | Group identifier |
+| `groupName` | `Signal.State<string      | null>` | Group display name |
+| `challenge` | `Signal.State<object      | null>` | Challenge data |
+| `formatScoreSignal` | `Signal.State<function    | null>` | Score formatting function (set via `.formatScore`) |
+| `spriteSheet` | `Signal.State<string>` | Sprite sheet URL from `sprite-sheet` attribute |
+| `muted` | `Signal.State<boolean>` | Whether sound is muted; synced by `<game-preference key="sound">` |
+| `day` | `Signal.Computed<number>` | Today's day number (day 1 = 2026-01-01). Useful with the `daily` attribute |
 
 Components access these via `effectCallback`:
 

@@ -50,6 +50,7 @@ Defines a single synthesised sound effect. Place inside `<game-audio>` for autom
 - **`marimba`** — Additive sine-wave partials (fundamental + 2nd + 4th harmonic) with an exponential decay envelope. Produces a warm, mallet-like tone.
 - **`beep`** — Square wave with a short exponential decay. Produces a sharp, retro game-style tone.
 - **`noise`** — Filtered white noise burst. Ignores the `notes` attribute. Useful for error sounds, percussive hits, or static effects.
+
 </dd>
 
 <dt><span class="badge attr">gain</span></dt>

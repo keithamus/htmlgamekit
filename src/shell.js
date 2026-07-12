@@ -740,7 +740,8 @@ export default class GameShell extends HTMLElement {
       if (!sk) return;
       const s = this.stats.get();
       if (s && Object.keys(s).length) {
-        const out = this.saveStats === "daily" ? { ...s, _day: this.day.get() } : s;
+        const out =
+          this.saveStats === "daily" ? { ...s, _day: this.day.get() } : s;
         storagePutJson(localStorage, `${sk}-stats`, out);
       }
     });
@@ -1150,7 +1151,9 @@ export default class GameShell extends HTMLElement {
         this.#betweenTimer = setTimeout(() => {
           if (this.#progression.computeThreshold) {
             this.score.set(
-              Math.round(this.#progression.computeThreshold() * this.scoreScale),
+              Math.round(
+                this.#progression.computeThreshold() * this.scoreScale,
+              ),
             );
           }
           this.scene.set("result");
@@ -1235,9 +1238,7 @@ export default class GameShell extends HTMLElement {
 
     // Dispatch "setup" lifecycle event so games can initialise
     // state (set stats, collections, etc.) before "playing" begins.
-    this.dispatchEvent(
-      new GameLifecycleEvent("setup", this.#stateSnapshot()),
-    );
+    this.dispatchEvent(new GameLifecycleEvent("setup", this.#stateSnapshot()));
     this.scene.set("playing");
     this.#scores.fetchToken();
   }

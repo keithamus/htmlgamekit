@@ -565,10 +565,7 @@ describe("GameShell", () => {
     });
 
     it("restores stats from localStorage on load", async () => {
-      localStorage.setItem(
-        "persist-test-stats",
-        JSON.stringify({ wins: 7 }),
-      );
+      localStorage.setItem("persist-test-stats", JSON.stringify({ wins: 7 }));
       const shell = await createPersist();
       assert.equal(shell.stats.get().wins, 7);
     });

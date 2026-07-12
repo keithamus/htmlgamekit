@@ -194,7 +194,9 @@ describe("game-preference", () => {
     shell.appendChild(el);
     document.body.appendChild(shell);
     el.set(false);
-    const stored = JSON.parse(localStorage.getItem("pref-set-test-preferences"));
+    const stored = JSON.parse(
+      localStorage.getItem("pref-set-test-preferences"),
+    );
     assert.equal(stored.sound, false);
   });
 

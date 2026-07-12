@@ -262,14 +262,14 @@ export default class GamePreferences extends GameComponent {
         const input = document.createElement("input");
         input.type = "checkbox";
         input.checked = !!pref.value;
-        input.addEventListener(
-          "change",
-          () => pref.set(input.checked),
-          { signal: this.signal },
-        );
+        input.addEventListener("change", () => pref.set(input.checked), {
+          signal: this.signal,
+        });
         pref.addEventListener(
           "game-preference-change",
-          () => { input.checked = !!pref.value; },
+          () => {
+            input.checked = !!pref.value;
+          },
           { signal: this.signal },
         );
         const track = document.createElement("span");
@@ -290,14 +290,14 @@ export default class GamePreferences extends GameComponent {
             signal: this.signal,
           });
         }
-        input.addEventListener(
-          "input",
-          () => pref.set(Number(input.value)),
-          { signal: this.signal },
-        );
+        input.addEventListener("input", () => pref.set(Number(input.value)), {
+          signal: this.signal,
+        });
         pref.addEventListener(
           "game-preference-change",
-          () => { input.value = pref.value; },
+          () => {
+            input.value = pref.value;
+          },
           { signal: this.signal },
         );
         range.appendChild(input);

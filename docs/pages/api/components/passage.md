@@ -57,8 +57,8 @@ Children of a passage can use `when-no-visited` and `when-some-visited` to diffe
 
 ### Signal Access
 
-| Signal        | Usage                                                             |
-| ------------- | ----------------------------------------------------------------- |
+| Signal        | Usage                                                              |
+| ------------- | ------------------------------------------------------------------ |
 | Shell signals | Reads signals via `effectCallback` to evaluate `when-*` conditions |
 
 ### Usage
@@ -83,7 +83,9 @@ A simple two-room adventure using passages, stats, and collections:
   </game-passage>
 
   <game-passage id="cellar" when-eq-room="cellar">
-    <p when-no-visited="cellar">A dark cellar. Something glints in the corner.</p>
+    <p when-no-visited="cellar">
+      A dark cellar. Something glints in the corner.
+    </p>
     <p when-some-visited="cellar">The cellar. Nothing new here.</p>
     <button commandfor="game" command="--stat" value="room:hallway">
       Go back

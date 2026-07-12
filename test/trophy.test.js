@@ -511,7 +511,9 @@ describe("game-trophy", () => {
             Promise.resolve({
               player: "test-uuid",
               game: "trophy-remote-el",
-              trophies: [{ id: "from-server", unlocked_at: "2026-01-01 00:00:00" }],
+              trophies: [
+                { id: "from-server", unlocked_at: "2026-01-01 00:00:00" },
+              ],
             }),
         });
 

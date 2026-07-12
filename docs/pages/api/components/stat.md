@@ -26,6 +26,7 @@ Must match the key used in <code>GameStatUpdateEvent</code> dispatches.
 - `"ms"` -- Round to integer and append "ms" suffix (e.g. `342ms`)
 - `"Ndp"` -- Fixed-point decimal with N decimal places (e.g. `"2dp"` formats `0.1` as `"0.10"`)
 - `"plain"` -- Display the raw value as a string (default)
+
 </dd>
 
 </dl>

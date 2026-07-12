@@ -29,14 +29,14 @@ Place as a child of `<game-shell>`. Toggle with <kbd>F2</kbd> or by setting the 
 
 ### Keyboard Shortcut
 
-| Key    | Action                        |
-| ------ | ----------------------------- |
-| `F2`   | Toggle the debug panel        |
+| Key  | Action                 |
+| ---- | ---------------------- |
+| `F2` | Toggle the debug panel |
 
 ### Signal Access
 
-| Signal        | Usage                                                                                          |
-| ------------- | ---------------------------------------------------------------------------------------------- |
+| Signal        | Usage                                                                                                     |
+| ------------- | --------------------------------------------------------------------------------------------------------- |
 | Shell signals | Reads `scene`, `round`, `score`, `stats`, `difficulty`, `passStreak`, `failStreak` for live state display |
 
 ### Usage

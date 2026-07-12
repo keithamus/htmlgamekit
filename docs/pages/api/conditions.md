@@ -36,11 +36,11 @@ Trophy checks use the key `trophy` with the trophy `id` as the attribute value, 
 
 Collection checks work the same way for any registered [collection](/api/game-shell/#collections). The key is the collection name and the value is one or more space-separated item IDs:
 
-| Attribute                        | Matches when                                      |
-| -------------------------------- | ------------------------------------------------- |
-| `when-some-inventory="sword"`    | `"sword"` is in the `"inventory"` collection      |
-| `when-no-visited="cellar"`       | `"cellar"` is NOT in the `"visited"` collection   |
-| `when-all-inventory="key lamp"`  | Both `"key"` and `"lamp"` are in `"inventory"`    |
+| Attribute                       | Matches when                                    |
+| ------------------------------- | ----------------------------------------------- |
+| `when-some-inventory="sword"`   | `"sword"` is in the `"inventory"` collection    |
+| `when-no-visited="cellar"`      | `"cellar"` is NOT in the `"visited"` collection |
+| `when-all-inventory="key lamp"` | Both `"key"` and `"lamp"` are in `"inventory"`  |
 
 After the operator is stripped, the remaining kebab-case key is camelCased. So `when-min-pass-streak` resolves the key `passStreak`, and `when-eq-scene` resolves `scene`. Difficulty and stats object keys are also matched after camelCasing.
 
@@ -179,9 +179,7 @@ Show content based on collection membership:
 
 ```html
 <!-- Show only if the player has a sword in inventory -->
-<div when-some-inventory="sword">
-  You grip the sword tightly.
-</div>
+<div when-some-inventory="sword">You grip the sword tightly.</div>
 
 <!-- Show only if the player has NOT visited the cellar -->
 <div when-no-visited="cellar">
@@ -189,9 +187,7 @@ Show content based on collection membership:
 </div>
 
 <!-- Show only if the player has both a key AND a lamp -->
-<div when-all-inventory="key lamp">
-  You can unlock the door and see inside.
-</div>
+<div when-all-inventory="key lamp">You can unlock the door and see inside.</div>
 ```
 
 ### Combining Conditions

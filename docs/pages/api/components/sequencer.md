@@ -98,10 +98,10 @@ This means the player feels comfortable at first, with tension building sharply 
 
 ### Signal Access
 
-| Signal        | Usage                                                                                      |
-| ------------- | ------------------------------------------------------------------------------------------ |
-| Shell signals | Reads `scene` signal from the shell to auto-start during `playing` and `between`, and auto-stop otherwise |
-| `game-preference-change` | Listens for `sound` preference changes on the shell to stop/start when muted |
+| Signal                   | Usage                                                                                                     |
+| ------------------------ | --------------------------------------------------------------------------------------------------------- |
+| Shell signals            | Reads `scene` signal from the shell to auto-start during `playing` and `between`, and auto-stop otherwise |
+| `game-preference-change` | Listens for `sound` preference changes on the shell to stop/start when muted                              |
 
 ### Mute Awareness
 

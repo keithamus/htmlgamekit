@@ -19,6 +19,7 @@ All attributes reflect as IDL properties of the same name.
 1. **Shell signals**: `score`, `round`, `rounds`, `scene`, `groupId`, `groupName`, `trophyCount`, `passStreak`, `failStreak`, `peakPassStreak`, `peakFailStreak`, `roundScore`, `bestRoundScore`, `worstRoundScore`, `url`
 2. **Difficulty properties**: any key from the difficulty object (e.g. `tierName`, `level`)
 3. **Stats**: any key from the stats map (e.g. `streak`, `totalDE`)
+
 </dd>
 
 <dt><span class="badge attr">format</span> <code>.format</code></dt>
