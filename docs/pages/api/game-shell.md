@@ -245,7 +245,7 @@ The session is cleared automatically on game completion (<code>result</code>) or
 
 <dt><span class="badge attr">save-stats</span> <code>.saveStats</code></dt>
 <dd>
-<code>"persist" | "daily" | "auto"</code> -- Controls whether and how the shell persists the <code>stats</code> signal to <code>localStorage</code> under the key <code>{storageKey}-stats</code>. IDL property returns <code>null</code> when absent, <code>"auto"</code> for a bare/unrecognised value, <code>"persist"</code>, or <code>"daily"</code>.
+<code>"persist" | "daily" | "auto"</code> -- Controls whether and how the shell persists the <code>stats</code> signal and completed result to <code>localStorage</code>. Stats use <code>{storageKey}-stats</code>; results use <code>{storageKey}</code>. When absent, neither is persisted or restored. IDL property returns <code>null</code> when absent, <code>"auto"</code> for a bare/unrecognised value, <code>"persist"</code>, or <code>"daily"</code>.
 
 **Bare attribute** (<code>save-stats</code>) -- Stats are persisted and restored on page load. Cleared when <code>.start()</code> is called. Useful for per-session game state (current room, story progress).
 

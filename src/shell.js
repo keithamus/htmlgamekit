@@ -208,7 +208,7 @@ export default class GameShell extends HTMLElement {
     "session-save": { type: "boolean" },
     "save-stats": {
       type: "enum",
-      values: ["persist", "daily"],
+      values: ["auto", "persist", "daily"],
       missing: null,
       invalid: "auto",
     },
@@ -973,7 +973,7 @@ export default class GameShell extends HTMLElement {
     }
 
     if (this.#restoreSession()) return;
-    if (this.#restoreResult()) return;
+    if (this.saveStats && this.#restoreResult()) return;
 
     // For daily games, if stats exist for today (in-progress game),
     // skip the intro and go straight to playing.
@@ -1204,13 +1204,15 @@ export default class GameShell extends HTMLElement {
       history.pushState(null, "", url);
     }
 
-    const result = {
-      score: this.score.get(),
-      round: this.round.get(),
-      roundScores: this.roundScores.get(),
-      encoded,
-    };
-    if (this.saveStats === "daily") result._day = this.day.get();
-    storagePutJson(localStorage, this.storageKey.get(), result);
+    if (this.saveStats) {
+      const result = {
+        score: this.score.get(),
+        round: this.round.get(),
+        roundScores: this.roundScores.get(),
+        encoded,
+      };
+      if (this.saveStats === "daily") result._day = this.day.get();
+      storagePutJson(localStorage, this.storageKey.get(), result);
+    }
   }
 }

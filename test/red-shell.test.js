@@ -273,7 +273,7 @@ describe("game-shell red-team", () => {
     );
   });
 
-  it("two shells with no game-id share the same localStorage key", async () => {
+  it("two shells with no game-id and no save-stats do not persist results", async () => {
     document.body.innerHTML =
       '<game-shell rounds="1" between-delay="0"></game-shell>';
     const shell1 = document.querySelector("game-shell");
@@ -284,7 +284,7 @@ describe("game-shell red-team", () => {
     await tick();
     assert.equal(shell1.scene.get(), "result");
     const stored = localStorage.getItem("");
-    assert.isNotNull(stored, "result stored under empty-string key");
+    assert.isNull(stored, "result not stored without save-stats");
 
     document.body.innerHTML = "";
     document.body.innerHTML =
@@ -292,15 +292,10 @@ describe("game-shell red-team", () => {
     const shell2 = document.querySelector("game-shell");
     await tick();
 
-    assert.equal(
+    assert.notEqual(
       shell2.scene.get(),
       "result",
-      "BUG: second shell restores first shell's result from shared empty key",
-    );
-    assert.equal(
-      shell2.score.get(),
-      42,
-      "BUG: second shell inherited first shell's score",
+      "second shell does not restore result without save-stats",
     );
   });
 

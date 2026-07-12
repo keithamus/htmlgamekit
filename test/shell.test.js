@@ -559,6 +559,23 @@ describe("GameShell", () => {
     });
   });
 
+  describe("save-stats values", () => {
+    it("reflects auto, persist and daily, and null when absent", async () => {
+      assert.isNull((await createShell()).saveStats);
+      assert.equal((await createShell("save-stats")).saveStats, "auto");
+      assert.equal((await createShell('save-stats="auto"')).saveStats, "auto");
+      assert.equal(
+        (await createShell('save-stats="persist"')).saveStats,
+        "persist",
+      );
+      assert.equal(
+        (await createShell('save-stats="daily"')).saveStats,
+        "daily",
+      );
+      assert.equal((await createShell('save-stats="nope"')).saveStats, "auto");
+    });
+  });
+
   describe("save-stats=persist", () => {
     async function createPersist(attrs = "") {
       return createShell(
@@ -589,6 +606,17 @@ describe("GameShell", () => {
       localStorage.setItem("persist-test-stats", JSON.stringify({ wins: 7 }));
       const shell = await createPersist();
       assert.equal(shell.stats.get().wins, 7);
+    });
+
+    it("persists and restores completed results", async () => {
+      const shell = await createPersist();
+      shell.start();
+      shell.dispatchEvent(new GameCompleteEvent(42));
+      await settle();
+
+      const restored = await createPersist();
+      assert.equal(restored.scene.get(), "result");
+      assert.equal(restored.score.get(), 42);
     });
   });
 
