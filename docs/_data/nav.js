@@ -46,6 +46,8 @@ const NAV_ORDER = [
   "game-audio",
   "game-sample",
   "game-sequencer",
+  "game-lobby",
+  "game-peer-connection",
   "game-passage",
   "game-debug",
 ];
@@ -93,6 +95,7 @@ module.exports = () => {
     { title: "Triggers", url: "/api/triggers/" },
     { title: "Conditions", url: "/api/conditions/" },
     { title: "Scoring", url: "/scoring/" },
+    { title: "Multiplayer", url: "/api/multiplayer/" },
     { section: "API Reference" },
     { title: "GameShell", url: "/api/game-shell/" },
     { title: "Round Progressions", url: "/api/progressions/" },
@@ -110,5 +113,6 @@ module.exports = () => {
     { title: "Capital Quiz", url: "/tutorials/capital-quiz/" },
     { title: "Word Guess", url: "/tutorials/word-guess/" },
     { title: "Scoring & Leaderboards", url: "/tutorials/scoring/" },
+    { title: "Noughts & Crosses", url: "/tutorials/noughts-and-crosses/" },
   ];
 };

@@ -65,6 +65,8 @@
     "./signals": "./src/signals.js",
     "./debug": "./src/debug.js",
     "./passage": "./src/passage.js",
+    "./lobby": "./src/lobby.js",
+    "./peer-connection": "./src/peer-connection.js",
     "./game-base.css": "./src/game-base.css"
   },
   "main": "./src/index.js",

@@ -53,6 +53,13 @@ export class ContextProvider {
   }
 }
 
+/**
+ * Request a context value from an ancestor provider and keep receiving updates.
+ *
+ * The request is retried in a microtask if no provider answered, so a provider
+ * that upgrades after the consumer (for example a `<game-lobby>` placed after
+ * `<game-peer-connection>`) is still found.
+ */
 export function subscribe(host, context, callback, { signal } = {}) {
   let unsubscribe;
   let answered = false;

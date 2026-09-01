@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Noughts &amp; Crosses - HTMLGameKit Example</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "signal-polyfill": "../../node_modules/signal-polyfill/dist/index.js"
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="../../src/game-base.css" />
+    <style>
+      noughts-and-crosses {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        min-height: 16rem;
+      }
+
+      noughts-and-crosses ol {
+        display: grid;
+        grid-template-columns: repeat(3, 5rem);
+        grid-template-rows: repeat(3, 5rem);
+        gap: 0.25rem;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      noughts-and-crosses li button {
+        width: 100%;
+        height: 100%;
+        font-size: 2rem;
+        cursor: pointer;
+        background: var(--surface-alt, #f0f0f0);
+        border: 2px solid var(--border, #ccc);
+        border-radius: 0.25rem;
+        line-height: 1;
+      }
+
+      noughts-and-crosses li button:disabled {
+        cursor: default;
+      }
+
+      noughts-and-crosses li[data-winner] button {
+        background: var(--pass, #4caf50);
+        color: white;
+        border-color: var(--pass, #4caf50);
+      }
+
+      noughts-and-crosses p[data-status] {
+        font-size: 1rem;
+        margin: 0;
+        min-height: 1.5em;
+      }
+
+      .stage {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+      }
+
+      .hud {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        font-size: 0.875rem;
+        opacity: 0.7;
+      }
+
+      .lobby-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        width: 100%;
+        max-width: 20rem;
+      }
+
+      .lobby-controls form {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+      }
+
+      .lobby-controls form input {
+        flex: 1;
+        min-width: 0;
+        font-size: 1rem;
+        padding: 0.4rem 0.6rem;
+        border: 2px solid var(--border, #ccc);
+        border-radius: 0.25rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+      }
+
+      [data-room-code] {
+        font-size: 2rem;
+        font-weight: bold;
+        letter-spacing: 0.2em;
+        margin: 0;
+      }
+
+      [data-room-code]::before {
+        content: "Room: ";
+        font-size: 0.75rem;
+        font-weight: normal;
+        letter-spacing: normal;
+        display: block;
+        opacity: 0.7;
+      }
+
+      [data-error]:empty {
+        display: none;
+      }
+
+      [data-error] {
+        color: var(--fail, #e53935);
+      }
+
+      .hud [data-ping]:has(game-signal:empty) {
+        visibility: hidden;
+      }
+
+      /* The lobby and the peer connection expose their state as CSS states,
+         so the overlays react to them without any JavaScript. */
+      game-lobby:state(connected) ~ [data-overlay] [data-offline],
+      game-peer-connection:state(ready) ~ [data-overlay] [data-rematch],
+      game-peer-connection:not(:state(ready))
+        ~ [data-overlay]
+        [data-rematch-wait] {
+        display: none;
+      }
+
+      game-lobby:not(:state(connected))
+        ~ [data-overlay]
+        .lobby-controls
+        :is(button, input) {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <game-shell id="game" game-id="tb88lrcfqyia" rounds="1" between-delay="0">
+      <game-lobby id="lobby" reconnect auto-ready></game-lobby>
+      <game-peer-connection id="match" auto-ready></game-peer-connection>
+
+      <!-- Main menu: connected to the server, but not yet in a room or queue -->
+      <div
+        when-some-scene="intro"
+        when-no-lobby-state="in-room in-queue signalling"
+        data-overlay
+      >
+        <hgroup>
+          <h1>Noughts &amp; Crosses</h1>
+          <p>Two players, one board. Connect with a friend to play.</p>
+        </hgroup>
+        <div class="lobby-controls">
+          <p data-offline>Connecting to the matchmaking server...</p>
+          <p data-error></p>
+          <button commandfor="lobby" command="--join-queue">Find a game</button>
+          <hr style="width: 100%; border-color: var(--border, #ccc)" />
+          <button commandfor="lobby" command="--create-room">
+            Create private room
+          </button>
+          <form id="form-join">
+            <input
+              id="input-code"
+              type="text"
+              maxlength="8"
+              placeholder="Room code"
+              aria-label="Room code"
+            />
+            <button type="submit">Join room</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Waiting in a private room -->
+      <div
+        when-some-scene="intro"
+        when-eq-lobby-state="in-room"
+        data-overlay
+        id="waiting-room"
+      >
+        <hgroup>
+          <h1>Waiting for opponent</h1>
+        </hgroup>
+        <p data-room-code><game-signal key="room-code"></game-signal></p>
+        <p>Share this code with a friend to play a private game.</p>
+        <button commandfor="lobby" command="--lobby-ready">Ready</button>
+        <button commandfor="lobby" command="--leave-room">Cancel</button>
+      </div>
+
+      <!-- In the matchmaking queue -->
+      <div
+        when-some-scene="intro"
+        when-eq-lobby-state="in-queue"
+        data-overlay
+        id="in-queue"
+      >
+        <hgroup>
+          <h1>Finding a game...</h1>
+        </hgroup>
+        <p>Looking for an opponent. This may take a moment.</p>
+        <button commandfor="lobby" command="--leave-queue">Cancel</button>
+      </div>
+
+      <!-- Peers found each other, WebRTC is negotiating -->
+      <div
+        when-some-scene="intro"
+        when-eq-lobby-state="signalling"
+        data-overlay
+        id="connecting"
+      >
+        <hgroup>
+          <h1>Connecting...</h1>
+        </hgroup>
+        <p>Setting up the peer connection.</p>
+      </div>
+
+      <!-- HUD and board -->
+      <div when-some-scene="playing between" class="stage">
+        <div class="hud">
+          <span>You are <game-signal key="symbol"></game-signal></span>
+          <span data-ping
+            >ping <game-signal key="latency"></game-signal>ms</span
+          >
+        </div>
+        <noughts-and-crosses></noughts-and-crosses>
+      </div>
+
+      <!-- Result overlay -->
+      <div when-some-scene="result" data-overlay>
+        <hgroup>
+          <h1>Game over</h1>
+        </hgroup>
+        <game-result-message>
+          <option when-eq-score="1">You win!</option>
+          <option when-eq-score="0" when-some-last-round-passed>Draw.</option>
+          <option when-no-last-round-passed>You lose.</option>
+        </game-result-message>
+        <button commandfor="match" command="--peer-ready" data-rematch>
+          Play again
+        </button>
+        <p data-rematch-wait>Waiting for your opponent to accept...</p>
+      </div>
+
+      <!-- The peer went away: covers every scene, so it wins over the board -->
+      <div when-eq-peer-state="disconnected" data-overlay>
+        <hgroup>
+          <h1>Opponent disconnected</h1>
+        </hgroup>
+        <p>They closed the game or lost their connection.</p>
+        <button id="btn-lobby">Back to the lobby</button>
+      </div>
+    </game-shell>
+
+    <script type="module" src="./noughts-and-crosses.js"></script>
+  </body>
+</html>

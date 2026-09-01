@@ -133,3 +133,87 @@ export class GameCollectionRemoveEvent extends Event {
     this.itemId = itemId;
   }
 }
+
+export class GameLobbyConnectedEvent extends Event {
+  constructor(playerId) {
+    super("game-lobby-connected", OPTS);
+    this.playerId = playerId;
+  }
+}
+
+export class GameLobbyRoomEvent extends Event {
+  constructor(code, players) {
+    super("game-lobby-room", OPTS);
+    this.code = code;
+    this.players = players;
+  }
+}
+
+export class GameLobbyMatchEvent extends Event {
+  constructor(players) {
+    super("game-lobby-match", OPTS);
+    this.players = players;
+  }
+}
+
+export class GameLobbyQueueEvent extends Event {
+  constructor(position) {
+    super("game-lobby-queue", OPTS);
+    this.position = position;
+  }
+}
+
+export class GameLobbyPlayerEvent extends Event {
+  constructor(action, player) {
+    super("game-lobby-player", OPTS);
+    this.action = action;
+    this.player = player;
+  }
+}
+
+export class GameLobbyStartEvent extends Event {
+  constructor(players, code) {
+    super("game-lobby-start", OPTS);
+    this.players = players;
+    this.code = code;
+  }
+}
+
+export class GameLobbyErrorEvent extends Event {
+  constructor(code, message) {
+    super("game-lobby-error", OPTS);
+    this.code = code;
+    this.message = message;
+  }
+}
+
+export class GamePeerConnectionOpenEvent extends Event {
+  constructor(peerId) {
+    super("game-peer-connection-open", OPTS);
+    this.peerId = peerId;
+  }
+}
+
+export class GamePeerConnectionCloseEvent extends Event {
+  constructor(peerId, reason = "closed") {
+    super("game-peer-connection-close", OPTS);
+    this.peerId = peerId;
+    this.reason = reason;
+  }
+}
+
+export class GamePeerConnectionMessageEvent extends Event {
+  constructor(peerId, channel, data) {
+    super("game-peer-connection-message", OPTS);
+    this.peerId = peerId;
+    this.channel = channel;
+    this.data = data;
+  }
+}
+
+export class GamePeerConnectionIceEvent extends Event {
+  constructor(state) {
+    super("game-peer-connection-ice", OPTS);
+    this.state = state;
+  }
+}

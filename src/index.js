@@ -26,6 +26,8 @@ export {
 export { default as GameWordSource, gameWordContext } from "./words.js";
 export { default as GameDebug } from "./debug.js";
 export { default as GamePassage } from "./passage.js";
+export { default as GameLobby, gameLobbyContext } from "./lobby.js";
+export { default as GamePeerConnection } from "./peer-connection.js";
 export { default as FixedProgression } from "./progressions/fixed.js";
 export { default as StaircaseProgression } from "./progressions/staircase.js";
 export { default as TierProgression } from "./progressions/tier.js";
@@ -49,6 +51,17 @@ export {
   GameTileSubmitEvent,
   GameCollectionAddEvent,
   GameCollectionRemoveEvent,
+  GameLobbyConnectedEvent,
+  GameLobbyRoomEvent,
+  GameLobbyMatchEvent,
+  GameLobbyQueueEvent,
+  GameLobbyPlayerEvent,
+  GameLobbyStartEvent,
+  GameLobbyErrorEvent,
+  GamePeerConnectionOpenEvent,
+  GamePeerConnectionCloseEvent,
+  GamePeerConnectionMessageEvent,
+  GamePeerConnectionIceEvent,
 } from "./events.js";
 
 export { PendingTaskEvent } from "./pending-task.js";
@@ -97,6 +110,8 @@ import GamePreferences, { GamePreference } from "./preferences.js";
 import GameWordSource from "./words.js";
 import GameDebug from "./debug.js";
 import GamePassage from "./passage.js";
+import GameLobby from "./lobby.js";
+import GamePeerConnection from "./peer-connection.js";
 
 export function defineAll(registry = customElements) {
   GameShell.define("game-shell", registry);
@@ -126,4 +141,6 @@ export function defineAll(registry = customElements) {
   GameWordSource.define("game-word-source", registry);
   GameDebug.define("game-debug", registry);
   GamePassage.define("game-passage", registry);
+  GameLobby.define("game-lobby", registry);
+  GamePeerConnection.define("game-peer-connection", registry);
 }
