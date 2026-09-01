@@ -28,15 +28,15 @@ The trigger system is defined in `src/triggers.js` and exported as `STATE_TRIGGE
 
 State triggers fire on game state transitions. They are detected by comparing the previous scene to the current scene after each signal change.
 
-| Trigger    | Fires When                                                                                     |
-| ---------- | ---------------------------------------------------------------------------------------------- |
-| `start`    | Game transitions to `playing` from `ready` or `result`                                         |
-| `round`    | Every transition to `playing` (including between rounds)                                       |
-| `pass`     | Round passed (enters `between` with `lastRoundPassed` true)                                    |
-| `fail`     | Round failed (enters `between` with `lastRoundPassed` false)                                   |
-| `timeout`  | Round failed due to timeout (feedback contains "time" **and** a timeout-specific child exists) |
-| `complete` | Game enters the `result` state                                                                 |
-| `tier-up`  | `difficulty.tierIndex` increased since the last state update                                   |
+| Trigger    | Fires When                                                                         |
+| ---------- | ---------------------------------------------------------------------------------- |
+| `start`    | Game transitions to `playing` from `ready` or `result`                             |
+| `round`    | Every transition to `playing` (including between rounds)                           |
+| `pass`     | Round passed (enters `between` with `lastRoundPassed` true)                        |
+| `fail`     | Round failed (enters `between` with `lastRoundPassed` false)                       |
+| `timeout`  | Round failed with `lastRoundTimedOut` true **and** a timeout-specific child exists |
+| `complete` | Game enters the `result` state                                                     |
+| `tier-up`  | `difficulty.tierIndex` increased since the last state update                       |
 
 ### Timeout Fallback
 
@@ -145,11 +145,11 @@ class MyComponent extends GameComponent {
   #prevScene = "init";
   #prevTierIndex = -1;
 
-  effectCallback({ scene, lastRoundPassed, lastFeedback, difficulty }) {
+  effectCallback({ scene, lastRoundPassed, lastRoundTimedOut, difficulty }) {
     const state = {
       scene: scene.get(),
       lastRoundPassed: lastRoundPassed.get(),
-      lastFeedback: lastFeedback.get(),
+      lastRoundTimedOut: lastRoundTimedOut.get(),
       difficulty: difficulty.get(),
     };
     const { triggers, tierIndex } = detectStateTriggers(

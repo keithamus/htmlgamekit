@@ -15,10 +15,11 @@ export class GameRoundPassEvent extends Event {
 }
 
 export class GameRoundFailEvent extends Event {
-  constructor(reason, retry = false) {
+  constructor(reason, retry = false, timedOut = false) {
     super("game-round-fail", OPTS);
     this.reason = reason;
     this.retry = retry;
+    this.timedOut = timedOut;
   }
 }
 

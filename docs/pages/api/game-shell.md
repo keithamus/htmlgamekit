@@ -354,6 +354,7 @@ The shell exposes all game state as public `Signal.State` properties directly on
 | `scoreOrder` | `Signal.State<string>` | `"asc"` or `"desc"` |
 | `lastRoundPassed` | `Signal.State<boolean     | null>` | Did last round pass? |
 | `lastFeedback` | `Signal.State<string      | null>` | Feedback from last round |
+| `lastRoundTimedOut` | `Signal.State<boolean>` | Did last round fail on the timer? |
 | `passStreak` | `Signal.State<number>` | Current consecutive pass streak |
 | `failStreak` | `Signal.State<number>` | Current consecutive fail streak |
 | `peakPassStreak` | `Signal.State<number>` | Highest pass streak reached this game |

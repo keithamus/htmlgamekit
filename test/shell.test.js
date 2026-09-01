@@ -136,7 +136,7 @@ describe("GameShell", () => {
       assert.deepEqual(shell.roundScores.get(), []);
     });
 
-    it("GameTimerExpiredEvent triggers a fail ('Time's up!')", async () => {
+    it("GameTimerExpiredEvent triggers a fail ('Time's up!') and sets lastRoundTimedOut", async () => {
       const shell = await createShell();
       shell.start();
       await settle();
@@ -144,7 +144,39 @@ describe("GameShell", () => {
       shell.dispatchEvent(new GameTimerExpiredEvent());
       assert.isFalse(shell.lastRoundPassed.get());
       assert.equal(shell.lastFeedback.get(), "Time's up!");
+      assert.isTrue(shell.lastRoundTimedOut.get());
       assert.equal(shell.scene.get(), "between");
+    });
+
+    it("lastRoundTimedOut stays false for a fail whose feedback mentions time", async () => {
+      const shell = await createShell();
+      shell.start();
+      await settle();
+
+      shell.dispatchEvent(new GameRoundFailEvent("Out of time!"));
+      assert.isFalse(shell.lastRoundTimedOut.get());
+    });
+
+    it("GameRoundFailEvent with timedOut=true sets lastRoundTimedOut", async () => {
+      const shell = await createShell();
+      shell.start();
+      await settle();
+
+      shell.dispatchEvent(new GameRoundFailEvent("Too slow", false, true));
+      assert.isTrue(shell.lastRoundTimedOut.get());
+    });
+
+    it("a pass clears lastRoundTimedOut", async () => {
+      const shell = await createShell('rounds="3" between-delay="0"');
+      shell.start();
+      await settle();
+
+      shell.dispatchEvent(new GameTimerExpiredEvent());
+      assert.isTrue(shell.lastRoundTimedOut.get());
+      await settle();
+
+      shell.dispatchEvent(new GameRoundPassEvent(1, "Nice!"));
+      assert.isFalse(shell.lastRoundTimedOut.get());
     });
   });
 

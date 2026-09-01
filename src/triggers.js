@@ -24,7 +24,7 @@ export const DOM_TRIGGERS = {
  * @param {object} state - Current game state
  * @param {string} prevStateName - Previous state.scene value
  * @param {number} prevTierIndex - Previous difficulty.tierIndex (-1 if unknown)
- * @param {function} hasTimeoutChild - Returns true if a timeout-specific child exists
+ * @param {function} hasTimeoutChild - Returns true if the consumer handles `timeout` separately
  * @returns {{ triggers: string[], tierIndex: number }}
  */
 export function detectStateTriggers(
@@ -47,9 +47,7 @@ export function detectStateTriggers(
       if (state.lastRoundPassed) {
         triggers.push("pass");
       } else {
-        const isTimeout =
-          state.lastFeedback?.toLowerCase().includes("time") &&
-          hasTimeoutChild();
+        const isTimeout = state.lastRoundTimedOut && hasTimeoutChild();
         triggers.push(isTimeout ? "timeout" : "fail");
       }
     }

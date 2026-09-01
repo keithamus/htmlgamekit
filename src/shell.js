@@ -383,6 +383,7 @@ export default class GameShell extends HTMLElement {
   scoreOrder = new Signal.State("asc");
   lastRoundPassed = new Signal.State(null);
   lastFeedback = new Signal.State(null);
+  lastRoundTimedOut = new Signal.State(false);
   passStreak = new Signal.State(0);
   failStreak = new Signal.State(0);
   peakPassStreak = new Signal.State(0);
@@ -590,6 +591,7 @@ export default class GameShell extends HTMLElement {
           difficulty: this.difficulty.get(),
           lastRoundPassed: this.lastRoundPassed.get(),
           lastFeedback: this.lastFeedback.get(),
+          lastRoundTimedOut: this.lastRoundTimedOut.get(),
         });
       } else if (scene !== "init") {
         storageRemove(sessionStorage, `${sk}-session`);
@@ -619,13 +621,13 @@ export default class GameShell extends HTMLElement {
       e.stopPropagation();
       if (this.scene.get() !== "playing") return;
       if (!e.retry) this.#scores.recordCheckin();
-      this.#roundFail(e.reason, e.retry);
+      this.#roundFail(e.reason, e.retry, e.timedOut);
     });
 
     on("game-timer-expired", (e) => {
       e.stopPropagation();
       if (this.scene.get() !== "playing") return;
-      this.#roundFail("Time's up!", false);
+      this.#roundFail("Time's up!", false, true);
     });
 
     on("game-stat-update", (e) => {
@@ -878,6 +880,7 @@ export default class GameShell extends HTMLElement {
     this.roundScores.set([]);
     this.lastRoundPassed.set(null);
     this.lastFeedback.set(null);
+    this.lastRoundTimedOut.set(false);
     this.passStreak.set(0);
     this.failStreak.set(0);
     this.peakPassStreak.set(0);
@@ -1008,6 +1011,7 @@ export default class GameShell extends HTMLElement {
     this.difficulty.set(saved.difficulty ?? {});
     this.lastRoundPassed.set(saved.lastRoundPassed ?? null);
     this.lastFeedback.set(saved.lastFeedback ?? null);
+    this.lastRoundTimedOut.set(saved.lastRoundTimedOut ?? false);
     this.#scores.fetchToken();
     return true;
   }
@@ -1041,6 +1045,7 @@ export default class GameShell extends HTMLElement {
       scoreOrder: this.scoreOrder.get(),
       lastRoundPassed: this.lastRoundPassed.get(),
       lastFeedback: this.lastFeedback.get(),
+      lastRoundTimedOut: this.lastRoundTimedOut.get(),
       passStreak: this.passStreak.get(),
       failStreak: this.failStreak.get(),
       peakPassStreak: this.peakPassStreak.get(),
@@ -1060,6 +1065,7 @@ export default class GameShell extends HTMLElement {
     this.score.set(total);
     this.lastRoundPassed.set(true);
     this.lastFeedback.set(feedback || null);
+    this.lastRoundTimedOut.set(false);
     const ps = this.passStreak.get() + 1;
     this.passStreak.set(ps);
     this.failStreak.set(0);
@@ -1068,7 +1074,8 @@ export default class GameShell extends HTMLElement {
     this.#advanceOrComplete();
   }
 
-  #roundFail(reason, retry) {
+  #roundFail(reason, retry, timedOut = false) {
+    this.lastRoundTimedOut.set(timedOut);
     if (retry) {
       this.lastRoundPassed.set(false);
       this.lastFeedback.set(reason || null);

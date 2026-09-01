@@ -191,6 +191,7 @@ export default class GameComponent extends HTMLElement {
           const round = shell.round.get();
           const lrp = shell.lastRoundPassed.get();
           const lf = shell.lastFeedback.get();
+          const lto = shell.lastRoundTimedOut.get();
           const diff = shell.difficulty.get();
 
           const triggerState = {
@@ -198,6 +199,7 @@ export default class GameComponent extends HTMLElement {
             round,
             lastRoundPassed: lrp,
             lastFeedback: lf,
+            lastRoundTimedOut: lto,
             difficulty: diff,
           };
           const prev = this.#prevState;

@@ -41,6 +41,7 @@ cleaned up when the component disconnects.
 | `scoreOrder`        | `"asc" \| "desc"`  | Whether lower (`asc`) or higher (`desc`) scores are better              |
 | `lastRoundPassed`   | `boolean \| null`  | Result of the most recent round                                         |
 | `lastFeedback`      | `string \| null`   | Feedback string from the most recent round event                        |
+| `lastRoundTimedOut` | `boolean`          | Did the most recent round fail because the timer expired?               |
 | `passStreak`        | `number`           | Current consecutive pass streak                                         |
 | `failStreak`        | `number`           | Current consecutive fail streak                                         |
 | `peakPassStreak`    | `number`           | Highest pass streak reached this game                                   |

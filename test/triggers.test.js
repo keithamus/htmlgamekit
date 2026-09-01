@@ -77,12 +77,12 @@ describe("triggers", () => {
       assert.notInclude(triggers, "pass");
     });
 
-    it('"timeout" fires when feedback contains "time" and hasTimeoutChild returns true', () => {
+    it('"timeout" fires when lastRoundTimedOut and hasTimeoutChild returns true', () => {
       const { triggers } = detectStateTriggers(
         {
           scene: "between",
           lastRoundPassed: false,
-          lastFeedback: "Out of time!",
+          lastRoundTimedOut: true,
         },
         "playing",
         -1,
@@ -97,11 +97,26 @@ describe("triggers", () => {
         {
           scene: "between",
           lastRoundPassed: false,
-          lastFeedback: "Out of time!",
+          lastRoundTimedOut: true,
         },
         "playing",
         -1,
         noTimeout,
+      );
+      assert.include(triggers, "fail");
+      assert.notInclude(triggers, "timeout");
+    });
+
+    it('"fail" fires when feedback mentions time but the round did not time out', () => {
+      const { triggers } = detectStateTriggers(
+        {
+          scene: "between",
+          lastRoundPassed: false,
+          lastFeedback: "Out of time!",
+        },
+        "playing",
+        -1,
+        hasTimeout,
       );
       assert.include(triggers, "fail");
       assert.notInclude(triggers, "timeout");

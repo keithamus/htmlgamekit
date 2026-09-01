@@ -178,7 +178,7 @@ describe("game-sample", () => {
 
       document
         .querySelector("#trigger")
-        .dispatchEvent(new GameRoundFailEvent("Out of time!"));
+        .dispatchEvent(new GameRoundFailEvent("Out of time!", false, true));
       await flush();
 
       assert.isFalse(playCalled, "fail-sound should not fire on timeout");
@@ -207,7 +207,7 @@ describe("game-sample", () => {
 
       document
         .querySelector("#trigger")
-        .dispatchEvent(new GameRoundFailEvent("Out of time!"));
+        .dispatchEvent(new GameRoundFailEvent("Out of time!", false, true));
       await flush();
 
       assert.include(played, "timeout-sound", "timeout-sound should fire");

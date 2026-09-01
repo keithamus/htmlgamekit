@@ -17,7 +17,7 @@ Game mechanics communicate with the shell by dispatching custom DOM events. The 
 
 2. Player interacts
    → GameRoundPassEvent(score, feedback)   success
-   OR GameRoundFailEvent(reason, retry)    failure
+   OR GameRoundFailEvent(reason, retry, timedOut)  failure
    OR GameTimerExpiredEvent                time ran out
 
 3. Shell catches the event, updates signals
@@ -128,7 +128,7 @@ Signals that the player failed a round.
 
 <dl class="def">
 
-<dt><span class="badge method">new GameRoundFailEvent(reason?, retry?)</span></dt>
+<dt><span class="badge method">new GameRoundFailEvent(reason?, retry?, timedOut?)</span></dt>
 <dd>
 
 **Event name:** `"game-round-fail"`
@@ -137,6 +137,7 @@ Signals that the player failed a round.
 
 - `reason` — `string` _(optional)_ — A message explaining the failure (e.g. `"Too slow"`, `"Wrong answer"`).
 - `retry` — `boolean` _(optional, default `false`)_ — If `true`, the round does **not** count against the player's total. The round number stays the same and the player tries again. If `false`, the round is consumed (counts as a failed attempt).
+- `timedOut` — `boolean` _(optional, default `false`)_ — If `true`, the failure is a timeout. It sets the `lastRoundTimedOut` signal and fires the `timeout` trigger instead of `fail` for components that handle timeout separately.
 
 </dd>
 
@@ -146,6 +147,9 @@ Signals that the player failed a round.
 <dt><span class="badge prop">.retry</span></dt>
 <dd><code>boolean</code> — Whether this is a non-counting retry.</dd>
 
+<dt><span class="badge prop">.timedOut</span></dt>
+<dd><code>boolean</code> — Whether the round ran out of time.</dd>
+
 </dl>
 
 ```js
@@ -154,6 +158,9 @@ this.dispatchEvent(new GameRoundFailEvent("Too slow"));
 
 // Non-counting retry — player tries the same round again
 this.dispatchEvent(new GameRoundFailEvent("False start!", true));
+
+// Timeout failure — fires the `timeout` trigger
+this.dispatchEvent(new GameRoundFailEvent("Out of time!", false, true));
 ```
 
 ---
