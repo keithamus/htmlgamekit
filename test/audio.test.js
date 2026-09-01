@@ -158,7 +158,7 @@ describe("game-sample", () => {
       assert.isTrue(playCalled, "start-sound should be played on game start");
     });
 
-    it("trigger='fail' fires on timeout when no trigger='timeout' sample exists (back-compat)", async () => {
+    it("trigger='fail' does not fire on timeout", async () => {
       document.body.innerHTML = `
 			<game-shell rounds="5" between-delay="manual">
 				<game-sample name="fail-sound" trigger="fail" type="marimba" notes="220:0"></game-sample>
@@ -181,10 +181,7 @@ describe("game-sample", () => {
         .dispatchEvent(new GameRoundFailEvent("Out of time!"));
       await flush();
 
-      assert.isTrue(
-        playCalled,
-        "fail-sound should fire on timeout when no timeout sample exists",
-      );
+      assert.isFalse(playCalled, "fail-sound should not fire on timeout");
     });
 
     it("trigger='fail' does NOT fire on timeout when trigger='timeout' sample exists", async () => {

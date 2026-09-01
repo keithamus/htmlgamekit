@@ -77,24 +77,8 @@ export class GameSample extends GameComponent {
     registry.define(tag, this);
   }
 
-  #warnedTimeoutFallback = false;
-
   timeoutCallback() {
-    if (this.trigger === "timeout") {
-      this.triggerCallback("timeout", null);
-      return;
-    }
-    if (this.trigger !== "fail") return;
-    const shell = this.shell;
-    if (shell?.querySelector('game-sample[trigger="timeout"]')) return;
-    if (!this.#warnedTimeoutFallback) {
-      this.#warnedTimeoutFallback = true;
-      console.warn(
-        "<game-sample trigger='fail'> firing on timeout is deprecated back-compat behaviour. " +
-          "Add <game-sample trigger='timeout'> for timeout sounds. Will be removed in the next major version.",
-      );
-    }
-    this.triggerCallback("fail", null);
+    if (this.trigger === "timeout") this.triggerCallback("timeout", null);
   }
 
   triggerCallback(name, event) {

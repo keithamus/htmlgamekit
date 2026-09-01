@@ -40,7 +40,7 @@ State triggers fire on game state transitions. They are detected by comparing th
 
 ### Timeout Fallback
 
-The `timeout` trigger only fires if the component defines `timeoutCallback` or has `trigger="timeout"`. Otherwise, timeouts fall through to `fail`. This means you only need to handle timeout distinctly when you want behaviour different from a regular failure.
+The `timeout` trigger only fires if the component defines `timeoutCallback` or has `trigger="timeout"`. Otherwise, timeouts fall through to `fail`. This means you only need to handle timeout distinctly when you want behaviour different from a regular failure. A component that handles timeout gets `timeout` only -- it never also gets `fail` for the same round.
 
 ### Tier-Up Detection
 
