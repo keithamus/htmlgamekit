@@ -74,28 +74,28 @@ const bytes = GameShell.fromBase64Url(encoded);
 
 </dd>
 
-<dt><span class="badge method">static encodeUint16WithBitmask(scale?)</span></dt>
+<dt><span class="badge method">static encodeUint16WithBitmask()</span></dt>
 <dd>
 Returns an <code>encodeResult</code> function. Packs the shell score and round pass/fail history into a compact binary URL token.
 
 Byte layout: <code>[score:uint16be] [correct:uint8] [total:uint8] [bitmask:⌈total/8⌉bytes]</code>
 
-Use when <code>roundScores</code> are pass/fail (0 or non-zero) and <code>score</code> is a fixed-point integer via <code>score-scale</code>. Pair with <code>decodeUint16WithBitmask</code> using the same scale.
+Use when <code>roundScores</code> are pass/fail (0 or non-zero) and <code>score</code> is a fixed-point integer via <code>score-scale</code>. Pair with <code>decodeUint16WithBitmask</code>.
 
 ```js
-shell.encodeResult = GameShell.encodeUint16WithBitmask(100000);
-shell.decodeResult = GameShell.decodeUint16WithBitmask(100000);
+shell.encodeResult = GameShell.encodeUint16WithBitmask();
+shell.decodeResult = GameShell.decodeUint16WithBitmask();
 // Decoded: { score: number, strip: boolean[] }
 ```
 
 </dd>
 
-<dt><span class="badge method">static decodeUint16WithBitmask(scale?)</span></dt>
+<dt><span class="badge method">static decodeUint16WithBitmask()</span></dt>
 <dd>
 Returns a <code>decodeResult</code> function matching <code>encodeUint16WithBitmask</code>. The decoded object contains <code>{ score, strip }</code> where <code>strip</code> is a boolean array of per-round pass/fail results. Returns <code>null</code> on invalid input.
 </dd>
 
-<dt><span class="badge method">static encodeUint16Array(scale?, roundCount?)</span></dt>
+<dt><span class="badge method">static encodeUint16Array(roundCount?)</span></dt>
 <dd>
 Returns an <code>encodeResult</code> function. Packs the shell score and all round scores into a compact binary URL token.
 
@@ -104,14 +104,14 @@ Byte layout: <code>[score:uint16be] [round0:uint16be] ... [roundN:uint16be]</cod
 Use when <code>roundScores</code> are continuous values (e.g. per-round reaction times stored as integers). Pair with <code>score-scale</code> so values are pre-scaled. Pass <code>roundCount</code> to lock the encoded length for games with a fixed round count.
 
 ```js
-shell.encodeResult = GameShell.encodeUint16Array(1, 10);
-shell.decodeResult = GameShell.decodeUint16Array(1, 10);
+shell.encodeResult = GameShell.encodeUint16Array(10);
+shell.decodeResult = GameShell.decodeUint16Array(10);
 // Decoded: { score: number, roundScores: number[] }
 ```
 
 </dd>
 
-<dt><span class="badge method">static decodeUint16Array(scale?, roundCount?)</span></dt>
+<dt><span class="badge method">static decodeUint16Array(roundCount?)</span></dt>
 <dd>
 Returns a <code>decodeResult</code> function matching <code>encodeUint16Array</code>. The decoded object contains <code>{ score, roundScores }</code>. Returns <code>null</code> on invalid input.
 </dd>

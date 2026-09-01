@@ -6,17 +6,17 @@ permalink: /api/utilities/
 
 # Utilities
 
-| Function                                           | Export                          | Docs                                            |
-| -------------------------------------------------- | ------------------------------- | ----------------------------------------------- |
-| `formatValue(v, format)`                           | Named export from `htmlgamekit` | below                                           |
-| `GameShell.toBase64Url(buf)`                       | Static on `GameShell`           | [GameShell]({{ site.baseurl }}/api/game-shell/) |
-| `GameShell.fromBase64Url(str)`                     | Static on `GameShell`           | [GameShell]({{ site.baseurl }}/api/game-shell/) |
-| `GameShell.encodeUint16WithBitmask(scale?)`        | Static on `GameShell`           | [GameShell]({{ site.baseurl }}/api/game-shell/) |
-| `GameShell.encodeUint16Array(scale?, roundCount?)` | Static on `GameShell`           | [GameShell]({{ site.baseurl }}/api/game-shell/) |
-| `gameScores(id, opts)`                             | Named export from `htmlgamekit` | [Scoring]({{ site.baseurl }}/scoring/)          |
-| `noopScores`                                       | Named export from `htmlgamekit` | [Scoring]({{ site.baseurl }}/scoring/)          |
-| `groupParam()`                                     | Named export from `htmlgamekit` | [GameShell]({{ site.baseurl }}/api/game-shell/) |
-| `appendGroupParam(url)`                            | Named export from `htmlgamekit` | [GameShell]({{ site.baseurl }}/api/game-shell/) |
+| Function                                   | Export                          | Docs                                            |
+| ------------------------------------------ | ------------------------------- | ----------------------------------------------- |
+| `formatValue(v, format)`                   | Named export from `htmlgamekit` | below                                           |
+| `GameShell.toBase64Url(buf)`               | Static on `GameShell`           | [GameShell]({{ site.baseurl }}/api/game-shell/) |
+| `GameShell.fromBase64Url(str)`             | Static on `GameShell`           | [GameShell]({{ site.baseurl }}/api/game-shell/) |
+| `GameShell.encodeUint16WithBitmask()`      | Static on `GameShell`           | [GameShell]({{ site.baseurl }}/api/game-shell/) |
+| `GameShell.encodeUint16Array(roundCount?)` | Static on `GameShell`           | [GameShell]({{ site.baseurl }}/api/game-shell/) |
+| `gameScores(id, opts)`                     | Named export from `htmlgamekit` | [Scoring]({{ site.baseurl }}/scoring/)          |
+| `noopScores`                               | Named export from `htmlgamekit` | [Scoring]({{ site.baseurl }}/scoring/)          |
+| `groupParam()`                             | Named export from `htmlgamekit` | [GameShell]({{ site.baseurl }}/api/game-shell/) |
+| `appendGroupParam(url)`                    | Named export from `htmlgamekit` | [GameShell]({{ site.baseurl }}/api/game-shell/) |
 
 ## `formatValue(v, format)`
 

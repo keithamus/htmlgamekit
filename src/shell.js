@@ -243,13 +243,11 @@ export default class GameShell extends HTMLElement {
    * Use when `roundScores` are pass/fail (0 or non-zero) and `score` is already
    * a fixed-point integer via `score-scale` (e.g. jnd=0.02, scale=100000 → score=2000).
    *
-   * Pair with `decodeUint16WithBitmask` using the same scale.
+   * Pair with `decodeUint16WithBitmask`.
    *
-   * @param {number} [scale=1] - Documented only; the shell stores the pre-scaled score.
-   *   Pass the same value used for `score-scale` as a hint to readers.
    * @returns {function(object): string}
    */
-  static encodeUint16WithBitmask(scale = 1) {
+  static encodeUint16WithBitmask() {
     return (state) => {
       const scoreInt = Math.round(state.score);
       const rounds = state.roundScores ?? [];
@@ -273,10 +271,9 @@ export default class GameShell extends HTMLElement {
    * The decoded object contains `{ score, strip }` where `strip` is a
    * boolean array of per-round pass/fail results.
    *
-   * @param {number} [scale=1] - Pass the same value used for `score-scale`.
    * @returns {function(string): {score: number, strip: boolean[]} | null}
    */
-  static decodeUint16WithBitmask(scale = 1) {
+  static decodeUint16WithBitmask() {
     return (str) => {
       try {
         const buf = fromBase64Url(str);
@@ -313,11 +310,10 @@ export default class GameShell extends HTMLElement {
    *
    * Pair with `decodeUint16Array` using the same `roundCount`.
    *
-   * @param {number} [scale=1] - Documented only; pass the same value as `score-scale`.
    * @param {number|null} [roundCount=null] - Fixed number of rounds to encode; null infers from `roundScores.length`.
    * @returns {function(object): string}
    */
-  static encodeUint16Array(scale = 1, roundCount = null) {
+  static encodeUint16Array(roundCount = null) {
     return (state) => {
       const scoreInt = Math.round(state.score);
       const rounds = state.roundScores ?? [];
@@ -339,11 +335,10 @@ export default class GameShell extends HTMLElement {
    * The decoded object contains `{ score, roundScores }` where `roundScores`
    * is an array of scaled integer values.
    *
-   * @param {number} [scale=1] - Pass the same value as `score-scale`.
    * @param {number} [roundCount] - Must match the value used when encoding.
    * @returns {function(string): {score: number, roundScores: number[]} | null}
    */
-  static decodeUint16Array(scale = 1, roundCount) {
+  static decodeUint16Array(roundCount) {
     return (str) => {
       try {
         const buf = fromBase64Url(str);
