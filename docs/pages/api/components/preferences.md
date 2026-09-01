@@ -50,11 +50,11 @@ shell.addEventListener("game-preference-change", (e) => {
 
 Auto-wiring is handled by each [`<game-preference>`]({{ site.baseurl }}/api/components/preference/) element, not by the panel. The following keys are auto-wired:
 
-| Key         | Auto-Wired To         | Effect                                             |
-| ----------- | --------------------- | -------------------------------------------------- |
-| `sound`     | `<game-audio>`, shell | Toggles `muted` attribute and `shell.muted` signal |
-| `volume`    | `<game-audio>`        | Sets the `volume` attribute (value / 100)          |
-| `vibration` | `<game-audio>`        | Toggles the `vibration` attribute                  |
+| Key         | Auto-Wired To | Effect                                       |
+| ----------- | ------------- | -------------------------------------------- |
+| `sound`     | shell         | Sets the `shell.muted` signal                |
+| `volume`    | shell         | Sets the `shell.volume` signal (value / 100) |
+| `vibration` | shell         | Sets the `shell.vibration` signal            |
 
 All other keys (e.g. `dark-mode`) dispatch `game-preference-change` events for your game code to handle.
 

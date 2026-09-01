@@ -98,9 +98,8 @@ changes.
 | [`<game-trophy>`]({{ site.baseurl }}/api/components/trophy/)                             | Achievement with persistent unlock and optional grid      |
 | [`<game-preferences>`]({{ site.baseurl }}/api/components/preferences/)                   | Popover-based preferences panel                           |
 | [`<game-preference>`]({{ site.baseurl }}/api/components/preferences/)                    | Individual preference (toggle, range)                     |
-| [`<game-audio>`]({{ site.baseurl }}/api/components/audio/)                               | Auto-triggering sound effect container                    |
-| [`<game-sample>`]({{ site.baseurl }}/api/components/audio/)                              | Synthesised sound effect definition                       |
-| [`<game-sequencer>`]({{ site.baseurl }}/api/components/audio/)                           | BPM-ramping music sequencer                               |
+| [`<game-sample>`]({{ site.baseurl }}/api/components/sample/)                             | Synthesised sound effect definition                       |
+| [`<game-sequencer>`]({{ site.baseurl }}/api/components/sequencer/)                       | BPM-ramping music sequencer                               |
 | [`progression` attribute]({{ site.baseurl }}/api/progressions/)                          | Declarative difficulty director config                    |
 | [`<game-signal>`]({{ site.baseurl }}/api/components/output/)                             | Live value display (score, round, stat, etc.)             |
 

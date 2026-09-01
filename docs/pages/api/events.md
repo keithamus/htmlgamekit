@@ -31,29 +31,29 @@ Game mechanics communicate with the shell by dispatching custom DOM events. The 
 
 ## Event Overview
 
-| Event                    | Fired by                     | Caught by                 |
-| ------------------------ | ---------------------------- | ------------------------- |
-| `game-round-pass`        | Your game                    | Shell                     |
-| `game-round-fail`        | Your game                    | Shell                     |
-| `game-timer-tick`        | `<game-timer>`               | Your game (optional)      |
-| `game-timer-expired`     | `<game-timer>`               | Shell                     |
-| `game-timer-countdown`   | `<game-timer>`               | `<game-audio>` (optional) |
-| `game-stat-update`       | Your game                    | Shell                     |
-| `game-lifecycle`         | Shell                        | Your entry script         |
-| `game-start-request`     | Intro button                 | Shell                     |
-| `game-restart-request`   | Result button                | Shell                     |
-| `game-complete`          | Your game                    | Shell                     |
-| `game-pause-request`     | Any child                    | Shell                     |
-| `game-resume-request`    | Any child                    | Shell                     |
-| `game-next-round`        | Any child                    | Shell                     |
-| `game-practice-start`    | Any child                    | Shell                     |
-| `game-trophy-unlock`     | `<game-trophy>`              | Shell                     |
-| `game-tile-input`        | `<game-tile-input>`          | `<game-audio>`            |
-| `game-tile-submit`       | `<game-tile-input>`          | Your game                 |
-| `pending-task`           | Any component                | Shell                     |
-| `game-collection-add`    | Your game / `<game-passage>` | Shell                     |
-| `game-collection-remove` | Your game                    | Shell                     |
-| `game-preference-change` | `<game-preferences>`         | Your entry script         |
+| Event                    | Fired by                     | Caught by                  |
+| ------------------------ | ---------------------------- | -------------------------- |
+| `game-round-pass`        | Your game                    | Shell                      |
+| `game-round-fail`        | Your game                    | Shell                      |
+| `game-timer-tick`        | `<game-timer>`               | Your game (optional)       |
+| `game-timer-expired`     | `<game-timer>`               | Shell                      |
+| `game-timer-countdown`   | `<game-timer>`               | `<game-sample>` (optional) |
+| `game-stat-update`       | Your game                    | Shell                      |
+| `game-lifecycle`         | Shell                        | Your entry script          |
+| `game-start-request`     | Intro button                 | Shell                      |
+| `game-restart-request`   | Result button                | Shell                      |
+| `game-complete`          | Your game                    | Shell                      |
+| `game-pause-request`     | Any child                    | Shell                      |
+| `game-resume-request`    | Any child                    | Shell                      |
+| `game-next-round`        | Any child                    | Shell                      |
+| `game-practice-start`    | Any child                    | Shell                      |
+| `game-trophy-unlock`     | `<game-trophy>`              | Shell                      |
+| `game-tile-input`        | `<game-tile-input>`          | `<game-sample>`            |
+| `game-tile-submit`       | `<game-tile-input>`          | Your game                  |
+| `pending-task`           | Any component                | Shell                      |
+| `game-collection-add`    | Your game / `<game-passage>` | Shell                      |
+| `game-collection-remove` | Your game                    | Shell                      |
+| `game-preference-change` | `<game-preferences>`         | Your entry script          |
 
 ---
 
@@ -478,7 +478,7 @@ this.dispatchEvent(new GamePracticeStartEvent());
 
 ## GameTileInputEvent
 
-Dispatched by `<game-tile-input>` on every character change (type or delete). Used by `<game-audio>` with `trigger="input"` to play keystroke sounds.
+Dispatched by `<game-tile-input>` on every character change (type or delete). Used by `<game-sample>` with `trigger="input"` to play keystroke sounds.
 
 <dl class="def">
 
@@ -512,7 +512,7 @@ tileInput.addEventListener("game-tile-input", (e) => {
 
 ## GameTimerCountdownEvent
 
-Fired by `<game-timer>` on each whole-second tick of the countdown. Used by `<game-audio>` with `trigger="countdown"` to play a ticking sound once per second.
+Fired by `<game-timer>` on each whole-second tick of the countdown. Used by `<game-sample>` with `trigger="countdown"` to play a ticking sound once per second.
 
 <dl class="def">
 

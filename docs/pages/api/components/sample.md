@@ -1,6 +1,9 @@
 ---
 title: "GameSample"
 permalink: /api/components/sample/
+demo: audio
+demoHeight: 350px
+demoTitle: Audio demo
 cemSkip: [attrs]
 ---
 
@@ -14,12 +17,12 @@ Defines a synthesised sound or vibration effect. Place it directly inside `<game
 
 <dt><span class="badge attr">name</span></dt>
 <dd>
-<code>string</code> — An identifier for manual lookup or legacy <code>GameAudio.play(name)</code>. Not required for trigger-based playback.
+<code>string</code> — An identifier for manual lookup or <code>.play()</code>. Not required for trigger-based playback.
 </dd>
 
 <dt><span class="badge attr">trigger</span></dt>
 <dd>
-<code>string</code> -- The auto-trigger name that causes this sample to play. See the trigger table in <a href="{{ site.baseurl }}/api/components/audio/">GameAudio</a>. Multiple samples can share the same trigger -- all matching samples play simultaneously. Combined with <a href="{{ site.baseurl }}/api/conditions/"><code>when-*</code> condition attributes</a>, you can play different sounds depending on the player's score, trophies, difficulty, and more.
+<code>string</code> -- The auto-trigger name that causes this sample to play. See the trigger table in <a href="{{ site.baseurl }}/api/components/sample/">GameSample</a>. Multiple samples can share the same trigger -- all matching samples play simultaneously. Combined with <a href="{{ site.baseurl }}/api/conditions/"><code>when-*</code> condition attributes</a>, you can play different sounds depending on the player's score, trophies, difficulty, and more.
 
 ```html
 <!-- Modest resolve for scores under 20 -->

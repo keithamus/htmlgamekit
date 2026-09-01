@@ -137,7 +137,7 @@ input.showResult(
 
 <dt><span class="badge event">game-tile-input</span></dt>
 <dd>
-Dispatched on every character change (type or delete). Carries <code>.value</code> (current string) and <code>.position</code> (index of the last changed character). Bubbles up through the DOM, so <code>&lt;game-audio&gt;</code> can use <code>trigger="input"</code> to play a click sound on each keystroke.
+Dispatched on every character change (type or delete). Carries <code>.value</code> (current string) and <code>.position</code> (index of the last changed character). Bubbles up through the DOM, so <code>&lt;game-sample&gt;</code> can use <code>trigger="input"</code> to play a click sound on each keystroke.
 </dd>
 
 <dt><span class="badge event">game-tile-submit</span></dt>
@@ -180,10 +180,8 @@ Basic word input:
 With click sounds on each keystroke:
 
 ```html
-<game-audio>
-  <game-sample trigger="input" type="noise" gain="0.15" duration="0.025">
-  </game-sample>
-</game-audio>
+<game-sample trigger="input" type="noise" gain="0.15" duration="0.025">
+</game-sample>
 
 <div when-some-scene="playing between paused">
   <game-tile-input length="5"></game-tile-input>

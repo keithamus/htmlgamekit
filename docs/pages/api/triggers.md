@@ -6,20 +6,13 @@ permalink: /api/triggers/
 
 # Triggers
 
-Triggers are named conditions that fire in response to game state transitions or DOM events. They are the shared mechanism used by [`<game-audio>`]({{ site.baseurl }}/api/components/audio/) (to play sounds), [`<game-toast>`]({{ site.baseurl }}/api/components/toast/) (to show messages), and any component that needs to react to game lifecycle moments.
+Triggers are named conditions that fire in response to game state transitions or DOM events. They are the shared mechanism used by [`<game-sample>`]({{ site.baseurl }}/api/components/sample/) (to play sounds), [`<game-toast>`]({{ site.baseurl }}/api/components/toast/) (to show messages), and any component that needs to react to game lifecycle moments.
 
 A trigger is set via the `trigger` attribute on a child element:
 
 ```html
-<game-audio>
-  <game-sample
-    trigger="pass"
-    type="beep"
-    notes="880:0"
-    gain="0.2"
-  ></game-sample>
-  <game-sample trigger="fail" type="noise" gain="0.3"></game-sample>
-</game-audio>
+<game-sample trigger="pass" type="beep" notes="880:0" gain="0.2"></game-sample>
+<game-sample trigger="fail" type="noise" gain="0.3"></game-sample>
 
 <game-toast when-some-scene="playing between paused" trigger="pass"
   >Nice!</game-toast
@@ -95,10 +88,10 @@ Triggered elements can have [`when-*` condition attributes]({{ site.baseurl }}/a
 
 ## Components That Use Triggers
 
-| Component                                                  | Trigger Attribute On                                                  | Behavior                     |
-| ---------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------- |
-| [`<game-audio>`]({{ site.baseurl }}/api/components/audio/) | `<game-sample trigger="...">`                                         | Plays the matching sample(s) |
-| [`<game-toast>`]({{ site.baseurl }}/api/components/toast/) | `<game-toast when-some-scene="playing between paused" trigger="...">` | Shows the toast message      |
+| Component                                                    | Trigger Attribute On                                                  | Behavior                     |
+| ------------------------------------------------------------ | --------------------------------------------------------------------- | ---------------------------- |
+| [`<game-sample>`]({{ site.baseurl }}/api/components/sample/) | `<game-sample trigger="...">`                                         | Plays the matching sample(s) |
+| [`<game-toast>`]({{ site.baseurl }}/api/components/toast/)   | `<game-toast when-some-scene="playing between paused" trigger="...">` | Shows the toast message      |
 
 ## Programmatic Access
 

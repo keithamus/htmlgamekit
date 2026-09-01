@@ -105,7 +105,7 @@ This means the player feels comfortable at first, with tension building sharply 
 
 ### Mute Awareness
 
-The sequencer checks the `<game-audio>` element's `muted` attribute before starting. If audio is muted, the sequencer stays stopped even during `playing`/`between` scenes. When the `sound` preference is toggled (via `--toggle-mute` or the preferences panel), the sequencer reacts immediately -- stopping if muted, resuming if unmuted and the game is in a playing state.
+The sequencer checks the shell's `muted` signal before starting. If audio is muted, the sequencer stays stopped even during `playing`/`between` scenes. When the `sound` preference is toggled (via `--toggle-mute` or the preferences panel), the sequencer reacts immediately -- stopping if muted, resuming if unmuted and the game is in a playing state.
 
 ### Usage
 

@@ -43,7 +43,6 @@ const NAV_ORDER = [
   "game-tile-input",
   "game-word-source",
   "game-icon",
-  "game-audio",
   "game-sample",
   "game-sequencer",
   "game-lobby",

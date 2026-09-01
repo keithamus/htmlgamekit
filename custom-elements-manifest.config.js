@@ -22,7 +22,6 @@ const TAG_MAP = {
   GameBetween: "game-between",
   GameSignal: "game-signal",
   GameIcon: "game-icon",
-  GameAudio: "game-audio",
   GameSample: "game-sample",
   GameSequencer: "game-sequencer",
   GameTileInput: "game-tile-input",

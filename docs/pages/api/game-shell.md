@@ -322,7 +322,7 @@ The `--stat`, `--collect`, and `--uncollect` commands read their data from the `
 </button>
 ```
 
-`--toggle-mute` finds the first `<game-preference key="sound">` inside the shell and calls its `.toggle()` method. The preference handles persistence and auto-wiring to `<game-audio>`. Pair with a `<game-icon>` to show the current state:
+`--toggle-mute` finds the first `<game-preference key="sound">` inside the shell and calls its `.toggle()` method. The preference handles persistence and sets the `shell.muted` signal. Pair with a `<game-icon>` to show the current state:
 
 ```html
 <game-preference key="sound" default="true"></game-preference>
@@ -723,7 +723,7 @@ Children declare which scenes they belong to via `when-some-scene`:
   </div>
 
   <!-- No when-* attrs: always slotted -->
-  <game-audio>...</game-audio>
+  <game-sample>...</game-sample>
 </game-shell>
 ```
 

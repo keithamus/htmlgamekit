@@ -45,6 +45,6 @@ module.exports = [
   },
   {
     name: "Audio",
-    tags: ["game-audio", "game-sample", "game-sequencer"],
+    tags: ["game-sample", "game-sequencer"],
   },
 ];

@@ -73,25 +73,23 @@ For `some`, `no`, and `all` operators, if the key matches a registered collectio
 Play a different sound based on trophy state:
 
 ```html
-<game-audio>
-  <game-sample
-    trigger="pass"
-    type="marimba"
-    notes="523:0,659:0.08,784:0.16"
-    gain="0.3"
-    when-some-trophy="hat-trick"
-  >
-  </game-sample>
+<game-sample
+  trigger="pass"
+  type="marimba"
+  notes="523:0,659:0.08,784:0.16"
+  gain="0.3"
+  when-some-trophy="hat-trick"
+>
+</game-sample>
 
-  <game-sample
-    trigger="pass"
-    type="beep"
-    notes="880:0"
-    gain="0.2"
-    when-no-trophy="hat-trick"
-  >
-  </game-sample>
-</game-audio>
+<game-sample
+  trigger="pass"
+  type="beep"
+  notes="880:0"
+  gain="0.2"
+  when-no-trophy="hat-trick"
+>
+</game-sample>
 ```
 
 ### Conditional Toasts

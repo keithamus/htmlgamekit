@@ -6,7 +6,7 @@ permalink: /tutorials/word-guess/
 
 In this tutorial you will build a Wordle-style word-guessing game. It
 showcases `<game-tile-input>` for keyboard-driven tile input, `<game-word-source>`
-for fetching real words from the API, declarative `<game-audio>` for sound
+for fetching real words from the API, declarative `<game-sample>` for sound
 effects, and `<game-flash>` for visual feedback.
 
 By the end you will understand how to use **`<game-tile-input>`** with the
@@ -162,20 +162,18 @@ the API directly.
 Add sound effects with zero JavaScript:
 
 ```html
-<game-audio>
-  <game-sample
-    trigger="pass"
-    type="marimba"
-    scale="pentatonic"
-    notes="5"
-    gain="0.25"
-    scale-root="440"
-    scale-spacing="0.08"
-  >
-  </game-sample>
-  <game-sample trigger="fail" type="noise" gain="0.3" duration="0.12">
-  </game-sample>
-</game-audio>
+<game-sample
+  trigger="pass"
+  type="marimba"
+  scale="pentatonic"
+  notes="5"
+  gain="0.25"
+  scale-root="440"
+  scale-spacing="0.08"
+>
+</game-sample>
+<game-sample trigger="fail" type="noise" gain="0.3" duration="0.12">
+</game-sample>
 ```
 
 - **`trigger="pass"`** plays a pentatonic scale jingle when the player
@@ -380,7 +378,7 @@ WordGame.define("word-game");
   `"good"`, `"close"`, `"wrong"`.
 - **`GameTileSubmitEvent`** fires when the player presses Enter with a
   complete word. Listen for `"game-tile-submit"` on a parent element.
-- **`<game-audio>` and `<game-sample>`** add sound effects declaratively.
+- **`<game-sample>`** adds sound effects declaratively.
   `scale` mode creates procedural jingles that scale with performance.
 - **`<game-flash>`** provides instant visual feedback with zero config.
 
@@ -394,5 +392,5 @@ WordGame.define("word-game");
   variable delays and retry failures
 - [Tile Input reference]({{ site.baseurl }}/api/components/tile-input/) --
   full API for `<game-tile-input>`
-- [Audio reference]({{ site.baseurl }}/api/components/audio/) --
-  full reference for `<game-audio>` and `<game-sample>`
+- [Sample reference]({{ site.baseurl }}/api/components/sample/) --
+  full reference for `<game-sample>`

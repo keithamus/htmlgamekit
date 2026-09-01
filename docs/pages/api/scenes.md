@@ -72,7 +72,7 @@ all direct children and slots those that match.
 `"intro"` is an alias that expands to `init demo ready`.
 
 Children with **no `when-*` attributes** are always slotted in, regardless of
-scene. This is useful for elements like `<game-audio>` that should always be
+scene. This is useful for elements like `<game-sample>` that should always be
 present.
 
 Because the shell uses the full `when-*` system, any signal condition can

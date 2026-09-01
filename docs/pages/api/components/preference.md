@@ -86,11 +86,11 @@ pref.toggle(); // true -> false, or false -> true
 
 The following preference keys are auto-wired to built-in components when the value changes or when the element connects:
 
-| Key         | Auto-Wired To         | Effect                                                                 |
-| ----------- | --------------------- | ---------------------------------------------------------------------- |
-| `sound`     | `<game-audio>`, shell | Toggles `<game-audio>` `muted` attribute and sets `shell.muted` signal |
-| `volume`    | `<game-audio>`        | Sets the `volume` attribute (value / 100)                              |
-| `vibration` | `<game-audio>`        | Toggles the `vibration` attribute                                      |
+| Key         | Auto-Wired To | Effect                                       |
+| ----------- | ------------- | -------------------------------------------- |
+| `sound`     | shell         | Sets the `shell.muted` signal                |
+| `volume`    | shell         | Sets the `shell.volume` signal (value / 100) |
+| `vibration` | shell         | Sets the `shell.vibration` signal            |
 
 ### Persistence
 
