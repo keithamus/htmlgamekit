@@ -218,70 +218,6 @@ export default class GameShell extends HTMLElement {
     "score-scale": { type: "long", default: 1 },
   };
 
-  scene = new Signal.State("init");
-  round = new Signal.State(0);
-  rounds = new Signal.State(0);
-  score = new Signal.State(0);
-  roundScores = new Signal.State([]);
-  roundScore = new Signal.Computed(() => {
-    const rs = this.roundScores.get();
-    return rs.length ? rs.at(-1) : 0;
-  });
-  bestRoundScore = new Signal.Computed(() => {
-    const rs = this.roundScores.get();
-    return rs.length ? rs.reduce((a, b) => Math.max(a, b), -Infinity) : 0;
-  });
-  worstRoundScore = new Signal.Computed(() => {
-    const rs = this.roundScores.get();
-    return rs.length ? rs.reduce((a, b) => Math.min(a, b), Infinity) : 0;
-  });
-  scoreOrder = new Signal.State("asc");
-  lastRoundPassed = new Signal.State(null);
-  lastFeedback = new Signal.State(null);
-  passStreak = new Signal.State(0);
-  failStreak = new Signal.State(0);
-  peakPassStreak = new Signal.State(0);
-  peakFailStreak = new Signal.State(0);
-  difficulty = new Signal.State({});
-  stats = new Signal.State({});
-  storageKey = new Signal.State("");
-  gameId = new Signal.State("");
-  betweenDelay = new Signal.State(500);
-  encodedResult = new Signal.State(null);
-  groupId = new Signal.State(null);
-  groupName = new Signal.State(null);
-  challenge = new Signal.State(null);
-  formatScoreSignal = new Signal.State(null);
-  spriteSheet = new Signal.State("");
-  muted = new Signal.State(false);
-  volume = new Signal.State(1);
-  vibration = new Signal.State(true);
-  day = new Signal.Computed(() =>
-    Math.floor((Date.now() - Date.UTC(2025, 11, 31)) / 864e5),
-  );
-
-  #shadow = this.attachShadow({ mode: "open", slotAssignment: "manual" });
-  #slot = (() => {
-    const s = document.createElement("slot");
-    this.#shadow.appendChild(s);
-    return s;
-  })();
-
-  #customStates = this.attachInternals().states;
-  #allStates = new Set(BUILTIN_STATES);
-  #scores = noopScores;
-  #progression = null;
-  #betweenTimer = null;
-  #encodeResult = null;
-  #decodeResult = null;
-
-  #trophyUnlocked = new Set();
-  #trophyStorageKey = "";
-  #trophyService = noopTrophies;
-  #collections = new Map();
-  #abort = null;
-  #effectDisposers = [];
-
   static define(tag = "game-shell", registry = customElements) {
     initAttrs(this);
     registry.define(tag, this);
@@ -427,31 +363,69 @@ export default class GameShell extends HTMLElement {
     };
   }
 
-  attributeChanged(name) {
-    if (!this.isConnected) return;
-    if (name === "scenes") this.#refreshCustomStates();
-    if (name === "rounds") this.rounds.set(this.roundsAttr);
-    if (name === "score-order") this.scoreOrder.set(this.scoreOrderAttr);
-    if (name === "between-delay")
-      this.betweenDelay.set(this.#parseBetweenDelay());
-    if (name === "game-id") {
-      this.gameId.set(this.gameIdAttr);
-      if (!this.storageKeyAttr) this.storageKey.set(this.gameIdAttr);
-    }
-    if (name === "storage-key") {
-      this.storageKey.set(this.storageKeyAttr || this.gameIdAttr || "");
-    }
-    if (name === "sprite-sheet") {
-      this.spriteSheet.set(this.spriteSheetAttr || "");
-    }
-  }
+  scene = new Signal.State("init");
+  round = new Signal.State(0);
+  rounds = new Signal.State(0);
+  score = new Signal.State(0);
+  roundScores = new Signal.State([]);
+  roundScore = new Signal.Computed(() => {
+    const rs = this.roundScores.get();
+    return rs.length ? rs.at(-1) : 0;
+  });
+  bestRoundScore = new Signal.Computed(() => {
+    const rs = this.roundScores.get();
+    return rs.length ? rs.reduce((a, b) => Math.max(a, b), -Infinity) : 0;
+  });
+  worstRoundScore = new Signal.Computed(() => {
+    const rs = this.roundScores.get();
+    return rs.length ? rs.reduce((a, b) => Math.min(a, b), Infinity) : 0;
+  });
+  scoreOrder = new Signal.State("asc");
+  lastRoundPassed = new Signal.State(null);
+  lastFeedback = new Signal.State(null);
+  passStreak = new Signal.State(0);
+  failStreak = new Signal.State(0);
+  peakPassStreak = new Signal.State(0);
+  peakFailStreak = new Signal.State(0);
+  difficulty = new Signal.State({});
+  stats = new Signal.State({});
+  storageKey = new Signal.State("");
+  gameId = new Signal.State("");
+  betweenDelay = new Signal.State(500);
+  encodedResult = new Signal.State(null);
+  groupId = new Signal.State(null);
+  groupName = new Signal.State(null);
+  challenge = new Signal.State(null);
+  formatScoreSignal = new Signal.State(null);
+  spriteSheet = new Signal.State("");
+  muted = new Signal.State(false);
+  volume = new Signal.State(1);
+  vibration = new Signal.State(true);
+  day = new Signal.Computed(() =>
+    Math.floor((Date.now() - Date.UTC(2025, 11, 31)) / 864e5),
+  );
 
-  #parseBetweenDelay() {
-    const raw = this.betweenDelayAttr;
-    if (raw === "manual") return 0;
-    const n = Number(raw);
-    return Number.isFinite(n) ? Math.max(0, n) : 500;
-  }
+  #shadow = this.attachShadow({ mode: "open", slotAssignment: "manual" });
+  #slot = (() => {
+    const s = document.createElement("slot");
+    this.#shadow.appendChild(s);
+    return s;
+  })();
+
+  #customStates = this.attachInternals().states;
+  #allStates = new Set(BUILTIN_STATES);
+  #scores = noopScores;
+  #progression = null;
+  #betweenTimer = null;
+  #encodeResult = null;
+  #decodeResult = null;
+
+  #trophyUnlocked = new Set();
+  #trophyStorageKey = "";
+  #trophyService = noopTrophies;
+  #collections = new Map();
+  #abort = null;
+  #effectDisposers = [];
 
   get scores() {
     return this.#scores;
@@ -493,124 +467,8 @@ export default class GameShell extends HTMLElement {
     );
   }
 
-  isTrophyUnlocked(id) {
-    return this.#trophyUnlocked.has(id);
-  }
-
   get trophyCount() {
     return this.#trophyUnlocked.size;
-  }
-
-  /**
-   * Add an item to a named collection. Collections are generic sets of
-   * string IDs, persisted to localStorage. Use for inventory, visited
-   * rooms, story flags, achievements, etc.
-   *
-   * @param {string} name - Collection name (e.g. "inventory", "visited")
-   * @param {string} id - Item ID to add
-   * @returns {boolean} true if the item was newly added, false if already present
-   */
-  addToCollection(name, id) {
-    let set = this.#collections.get(name);
-    if (!set) {
-      set = new Set();
-      this.#collections.set(name, set);
-    }
-    if (set.has(id)) return false;
-    set.add(id);
-    this.#saveCollection(name);
-    return true;
-  }
-
-  /**
-   * Remove an item from a named collection.
-   *
-   * @param {string} name - Collection name
-   * @param {string} id - Item ID to remove
-   * @returns {boolean} true if the item was present and removed
-   */
-  removeFromCollection(name, id) {
-    const set = this.#collections.get(name);
-    if (!set?.has(id)) return false;
-    set.delete(id);
-    this.#saveCollection(name);
-    return true;
-  }
-
-  /**
-   * Check if an item exists in a named collection.
-   *
-   * @param {string} name - Collection name
-   * @param {string} id - Item ID to check
-   * @returns {boolean}
-   */
-  hasInCollection(name, id) {
-    return this.#collections.get(name)?.has(id) ?? false;
-  }
-
-  /**
-   * Get the number of items in a named collection.
-   *
-   * @param {string} name - Collection name
-   * @returns {number}
-   */
-  collectionSize(name) {
-    return this.#collections.get(name)?.size ?? 0;
-  }
-
-  /**
-   * Get all item IDs in a named collection.
-   *
-   * @param {string} name - Collection name
-   * @returns {string[]}
-   */
-  collectionEntries(name) {
-    const set = this.#collections.get(name);
-    return set ? [...set] : [];
-  }
-
-  /**
-   * Clear all items from a named collection.
-   *
-   * @param {string} name - Collection name
-   */
-  clearCollection(name) {
-    const set = this.#collections.get(name);
-    if (set) {
-      set.clear();
-      this.#saveCollection(name);
-    }
-  }
-
-  /**
-   * Check whether a named collection has been registered (even if empty).
-   * Used by the condition system to distinguish collection keys from
-   * signal/stat keys.
-   *
-   * @param {string} name - Collection name
-   * @returns {boolean}
-   */
-  isCollection(name) {
-    return this.#collections.has(name);
-  }
-
-  #saveCollection(name) {
-    const set = this.#collections.get(name);
-    const key = `${this.storageKey.get()}-collection-${name}`;
-    if (set?.size) {
-      storagePutJson(localStorage, key, [...set]);
-    } else {
-      storageRemove(localStorage, key);
-    }
-  }
-
-  #loadCollection(name) {
-    const key = `${this.storageKey.get()}-collection-${name}`;
-    const arr = storageGetJson(localStorage, key);
-    if (Array.isArray(arr) && arr.length) {
-      const set = new Set(arr);
-      this.#collections.set(name, set);
-    }
   }
 
   connectedCallback() {
@@ -927,8 +785,196 @@ export default class GameShell extends HTMLElement {
     this.#effectDisposers = [];
   }
 
+  attributeChanged(name) {
+    if (!this.isConnected) return;
+    if (name === "scenes") this.#refreshCustomStates();
+    if (name === "rounds") this.rounds.set(this.roundsAttr);
+    if (name === "score-order") this.scoreOrder.set(this.scoreOrderAttr);
+    if (name === "between-delay")
+      this.betweenDelay.set(this.#parseBetweenDelay());
+    if (name === "game-id") {
+      this.gameId.set(this.gameIdAttr);
+      if (!this.storageKeyAttr) this.storageKey.set(this.gameIdAttr);
+    }
+    if (name === "storage-key") {
+      this.storageKey.set(this.storageKeyAttr || this.gameIdAttr || "");
+    }
+    if (name === "sprite-sheet") {
+      this.spriteSheet.set(this.spriteSheetAttr || "");
+    }
+  }
+
+  isTrophyUnlocked(id) {
+    return this.#trophyUnlocked.has(id);
+  }
+
+  /**
+   * Add an item to a named collection. Collections are generic sets of
+   * string IDs, persisted to localStorage. Use for inventory, visited
+   * rooms, story flags, achievements, etc.
+   *
+   * @param {string} name - Collection name (e.g. "inventory", "visited")
+   * @param {string} id - Item ID to add
+   * @returns {boolean} true if the item was newly added, false if already present
+   */
+  addToCollection(name, id) {
+    let set = this.#collections.get(name);
+    if (!set) {
+      set = new Set();
+      this.#collections.set(name, set);
+    }
+    if (set.has(id)) return false;
+    set.add(id);
+    this.#saveCollection(name);
+    return true;
+  }
+
+  /**
+   * Remove an item from a named collection.
+   *
+   * @param {string} name - Collection name
+   * @param {string} id - Item ID to remove
+   * @returns {boolean} true if the item was present and removed
+   */
+  removeFromCollection(name, id) {
+    const set = this.#collections.get(name);
+    if (!set?.has(id)) return false;
+    set.delete(id);
+    this.#saveCollection(name);
+    return true;
+  }
+
+  /**
+   * Check if an item exists in a named collection.
+   *
+   * @param {string} name - Collection name
+   * @param {string} id - Item ID to check
+   * @returns {boolean}
+   */
+  hasInCollection(name, id) {
+    return this.#collections.get(name)?.has(id) ?? false;
+  }
+
+  /**
+   * Get the number of items in a named collection.
+   *
+   * @param {string} name - Collection name
+   * @returns {number}
+   */
+  collectionSize(name) {
+    return this.#collections.get(name)?.size ?? 0;
+  }
+
+  /**
+   * Get all item IDs in a named collection.
+   *
+   * @param {string} name - Collection name
+   * @returns {string[]}
+   */
+  collectionEntries(name) {
+    const set = this.#collections.get(name);
+    return set ? [...set] : [];
+  }
+
+  /**
+   * Clear all items from a named collection.
+   *
+   * @param {string} name - Collection name
+   */
+  clearCollection(name) {
+    const set = this.#collections.get(name);
+    if (set) {
+      set.clear();
+      this.#saveCollection(name);
+    }
+  }
+
+  /**
+   * Check whether a named collection has been registered (even if empty).
+   * Used by the condition system to distinguish collection keys from
+   * signal/stat keys.
+   *
+   * @param {string} name - Collection name
+   * @returns {boolean}
+   */
+  isCollection(name) {
+    return this.#collections.has(name);
+  }
+
+  start() {
+    clearTimeout(this.#betweenTimer);
+    const sk = this.storageKey.get();
+
+    // For persist/daily modes, snapshot stats before clearing storage
+    // so they survive a start() call.
+    let keepStats = null;
+    const mode = this.saveStats;
+    if (mode === "persist") {
+      keepStats = this.stats.get();
+    } else if (mode === "daily") {
+      const saved = storageGetJson(localStorage, `${sk}-stats`);
+      if (saved && saved._day === this.day.get()) keepStats = saved;
+    }
+
+    storageRemove(localStorage, sk);
+    storageRemove(localStorage, `${sk}-stats`);
+    storageRemove(sessionStorage, `${sk}-session`);
+    cleanUrl();
+    this.encodedResult.set(null);
+
+    this.round.set(1);
+    this.score.set(0);
+    this.roundScores.set([]);
+    this.lastRoundPassed.set(null);
+    this.lastFeedback.set(null);
+    this.passStreak.set(0);
+    this.failStreak.set(0);
+    this.peakPassStreak.set(0);
+    this.peakFailStreak.set(0);
+    this.stats.set(keepStats ?? {});
+
+    if (this.#progression) {
+      const diff = this.#progression.init(this.roundsAttr);
+      this.difficulty.set(diff);
+    }
+
+    // Dispatch "setup" lifecycle event so games can initialise
+    // state (set stats, collections, etc.) before "playing" begins.
+    this.dispatchEvent(new GameLifecycleEvent("setup", this.#stateSnapshot()));
+    this.scene.set("playing");
+    this.#scores.fetchToken();
+  }
+
+  pause() {
+    if (this.scene.get() !== "playing") return;
+    clearTimeout(this.#betweenTimer);
+    this.scene.set("paused");
+  }
+
+  resume() {
+    if (this.scene.get() !== "paused") return;
+    this.scene.set("playing");
+  }
+
   #effect(fn) {
     this.#effectDisposers.push(effect(fn));
+  }
+
+  #parseBetweenDelay() {
+    const raw = this.betweenDelayAttr;
+    if (raw === "manual") return 0;
+    const n = Number(raw);
+    return Number.isFinite(n) ? Math.max(0, n) : 500;
+  }
+
+  #saveCollection(name) {
+    const set = this.#collections.get(name);
+    const key = `${this.storageKey.get()}-collection-${name}`;
+    if (set?.size) {
+      storagePutJson(localStorage, key, [...set]);
+    } else {
+      storageRemove(localStorage, key);
+    }
   }
 
   async #init() {
@@ -1204,60 +1250,5 @@ export default class GameShell extends HTMLElement {
     };
     if (this.saveStats === "daily") result._day = this.day.get();
     storagePutJson(localStorage, this.storageKey.get(), result);
-  }
-
-  start() {
-    clearTimeout(this.#betweenTimer);
-    const sk = this.storageKey.get();
-
-    // For persist/daily modes, snapshot stats before clearing storage
-    // so they survive a start() call.
-    let keepStats = null;
-    const mode = this.saveStats;
-    if (mode === "persist") {
-      keepStats = this.stats.get();
-    } else if (mode === "daily") {
-      const saved = storageGetJson(localStorage, `${sk}-stats`);
-      if (saved && saved._day === this.day.get()) keepStats = saved;
-    }
-
-    storageRemove(localStorage, sk);
-    storageRemove(localStorage, `${sk}-stats`);
-    storageRemove(sessionStorage, `${sk}-session`);
-    cleanUrl();
-    this.encodedResult.set(null);
-
-    this.round.set(1);
-    this.score.set(0);
-    this.roundScores.set([]);
-    this.lastRoundPassed.set(null);
-    this.lastFeedback.set(null);
-    this.passStreak.set(0);
-    this.failStreak.set(0);
-    this.peakPassStreak.set(0);
-    this.peakFailStreak.set(0);
-    this.stats.set(keepStats ?? {});
-
-    if (this.#progression) {
-      const diff = this.#progression.init(this.roundsAttr);
-      this.difficulty.set(diff);
-    }
-
-    // Dispatch "setup" lifecycle event so games can initialise
-    // state (set stats, collections, etc.) before "playing" begins.
-    this.dispatchEvent(new GameLifecycleEvent("setup", this.#stateSnapshot()));
-    this.scene.set("playing");
-    this.#scores.fetchToken();
-  }
-
-  pause() {
-    if (this.scene.get() !== "playing") return;
-    clearTimeout(this.#betweenTimer);
-    this.scene.set("paused");
-  }
-
-  resume() {
-    if (this.scene.get() !== "paused") return;
-    this.scene.set("playing");
   }
 }
