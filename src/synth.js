@@ -3,11 +3,30 @@ if ("audioSession" in navigator) navigator.audioSession.type = "ambient";
 // Prefix fallback for older Safari/WebKit.
 const AudioCtor = window.AudioContext ?? window.webkitAudioContext;
 let sharedCtx = null;
+let masterGain = null;
+let masterVolume = 1;
 
 export function getAudioCtx() {
   if (!sharedCtx) sharedCtx = new AudioCtor();
   if (sharedCtx.state === "suspended") sharedCtx.resume();
   return sharedCtx;
+}
+
+export function getMasterGain() {
+  const ctx = getAudioCtx();
+  if (!masterGain) {
+    masterGain = ctx.createGain();
+    masterGain.gain.value = masterVolume;
+    masterGain.connect(ctx.destination);
+  }
+  return masterGain;
+}
+
+export function setMasterVolume(v) {
+  masterVolume = Math.max(0, Math.min(1, v));
+  if (masterGain) {
+    masterGain.gain.setTargetAtTime(masterVolume, sharedCtx.currentTime, 0.02);
+  }
 }
 
 // iOS Safari suspends AudioContext until a synchronous user-gesture call.
@@ -43,7 +62,7 @@ export function synthMarimba(ctx, freq, when, gain, duration = 0.5) {
     const osc = ctx.createOscillator();
     const env = ctx.createGain();
     osc.connect(env);
-    env.connect(ctx.destination);
+    env.connect(getMasterGain());
     osc.type = "sine";
     osc.frequency.value = freq * p.mult;
     env.gain.setValueAtTime(0, t);
@@ -59,8 +78,22 @@ export function synthBeep(ctx, freq, when, gain, duration = 0.08) {
   const osc = ctx.createOscillator();
   const env = ctx.createGain();
   osc.connect(env);
-  env.connect(ctx.destination);
+  env.connect(getMasterGain());
   osc.type = "square";
+  osc.frequency.value = freq;
+  env.gain.setValueAtTime(gain, t);
+  env.gain.exponentialRampToValueAtTime(0.001, t + duration);
+  osc.start(t);
+  osc.stop(t + duration + 0.01);
+}
+
+export function synthSine(ctx, freq, when, gain, duration = 0.08) {
+  const t = ctx.currentTime + when;
+  const osc = ctx.createOscillator();
+  const env = ctx.createGain();
+  osc.connect(env);
+  env.connect(getMasterGain());
+  osc.type = "sine";
   osc.frequency.value = freq;
   env.gain.setValueAtTime(gain, t);
   env.gain.exponentialRampToValueAtTime(0.001, t + duration);
@@ -92,7 +125,7 @@ export function synthNoise(ctx, when, gain, duration = 0.02, options = {}) {
   } else {
     src.connect(env);
   }
-  env.connect(ctx.destination);
+  env.connect(getMasterGain());
   env.gain.setValueAtTime(gain, t);
   src.start(t);
 }
@@ -100,6 +133,7 @@ export function synthNoise(ctx, when, gain, duration = 0.02, options = {}) {
 export const SYNTHS = {
   marimba: synthMarimba,
   beep: synthBeep,
+  sine: synthSine,
   noise: synthNoise,
 };
 

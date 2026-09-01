@@ -8,6 +8,7 @@ import StaircaseProgression from "./progressions/staircase.js";
 import TierProgression from "./progressions/tier.js";
 import { initAttrs, camelCase } from "./component.js";
 import { matchesConditions } from "./conditions.js";
+import { setMasterVolume } from "./synth.js";
 
 function toBase64Url(buf) {
   const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
@@ -253,6 +254,8 @@ export default class GameShell extends HTMLElement {
   formatScoreSignal = new Signal.State(null);
   spriteSheet = new Signal.State("");
   muted = new Signal.State(false);
+  volume = new Signal.State(1);
+  vibration = new Signal.State(true);
   day = new Signal.Computed(() =>
     Math.floor((Date.now() - Date.UTC(2025, 11, 31)) / 864e5),
   );
@@ -678,6 +681,10 @@ export default class GameShell extends HTMLElement {
     if (!this.#progression && this.progression) {
       this.#progression = this.#createProgression();
     }
+
+    this.#effect(() => {
+      setMasterVolume(this.volume.get());
+    });
 
     let prevScene = "init";
     this.#effect(() => {
