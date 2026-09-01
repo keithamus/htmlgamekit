@@ -57,17 +57,19 @@ describe("game-preferences", () => {
   });
 
   it("toggle default=true starts checked", async () => {
-    const { prefs } = createShellWithPrefs();
+    const { shell, prefs } = createShellWithPrefs();
     await tick();
     const checkbox = prefs.shadowRoot.querySelector('input[type="checkbox"]');
     assert.isTrue(checkbox.checked);
+    assert.isFalse(shell.muted.get());
   });
 
   it("range default=80 starts at 80", async () => {
-    const { prefs } = createShellWithPrefs();
+    const { shell, prefs } = createShellWithPrefs();
     await tick();
     const range = prefs.shadowRoot.querySelector('input[type="range"]');
     assert.equal(Number(range.value), 80);
+    assert.equal(shell.volume.get(), 0.8);
   });
 
   it("get() returns preference value", async () => {

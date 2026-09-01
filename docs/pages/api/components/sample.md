@@ -4,9 +4,9 @@ permalink: /api/components/sample/
 cemSkip: [attrs]
 ---
 
-Defines a single synthesised sound effect. Place inside `<game-audio>` for automatic triggering, or use standalone and call `.play()` directly.
+Defines a synthesised sound or vibration effect. Place it directly inside `<game-shell>` for automatic triggering, or call `.play()` manually.
 
-`<game-sample>` extends `HTMLElement` directly (not `GameComponent`) — it has no shadow DOM and no state subscriptions.
+`<game-sample>` observes shell triggers and the `muted`, `vibration`, `roundScores`, `rounds`, and `scoreOrder` signals.
 
 ### Attributes
 
@@ -14,7 +14,7 @@ Defines a single synthesised sound effect. Place inside `<game-audio>` for autom
 
 <dt><span class="badge attr">name</span></dt>
 <dd>
-<code>string</code> — An identifier for manual playback via <code>GameAudio.play(name)</code>. Not required for trigger-based playback.
+<code>string</code> — An identifier for manual lookup or legacy <code>GameAudio.play(name)</code>. Not required for trigger-based playback.
 </dd>
 
 <dt><span class="badge attr">trigger</span></dt>
@@ -45,10 +45,11 @@ Defines a single synthesised sound effect. Place inside `<game-audio>` for autom
 
 <dt><span class="badge attr">type</span></dt>
 <dd>
-<code>"marimba" | "beep" | "noise"</code> — The synthesis engine to use. Defaults to <code>"marimba"</code>.
+<code>"marimba" | "beep" | "sine" | "noise"</code> — The synthesis engine to use. Defaults to <code>"marimba"</code>.
 
 - **`marimba`** — Additive sine-wave partials (fundamental + 2nd + 4th harmonic) with an exponential decay envelope. Produces a warm, mallet-like tone.
 - **`beep`** — Square wave with a short exponential decay. Produces a sharp, retro game-style tone.
+- **`sine`** — Sine wave with a short exponential decay. Produces a soft, clean tone.
 - **`noise`** — Filtered white noise burst. Ignores the `notes` attribute. Useful for error sounds, percussive hits, or static effects.
 
 </dd>
@@ -148,7 +149,7 @@ A low score plays 1 note at a low pitch. A high score plays up to 5 ascending no
 </game-sample>
 ```
 
-Feature detection is built in — if `navigator.vibrate` is not available, the attribute is silently ignored. The parent `<game-audio>` element's `vibration` attribute acts as a global toggle.
+Feature detection is built in — if `navigator.vibrate` is unavailable, the attribute is ignored. The shell's `vibration` signal acts as the global toggle.
 
 </dd>
 
@@ -164,7 +165,7 @@ Play this sample immediately. Creates an <code>AudioContext</code> (or reuses th
 
 **Parameters:**
 
-- `state` -- `object` _(optional)_ -- Game state snapshot, required when `scale` is set. The sample reads `state.roundScores`, `state.rounds`, and `state.scoreOrder` to compute the note count and pitch. When called by `<game-audio>` automatically, state is always passed. When calling manually, omit `state` only if this sample does not use the `scale` attribute.
+- `state` -- `object` _(optional)_ -- Override for `roundScores`, `rounds`, and `scoreOrder`. When omitted, scale samples read current shell signals.
 
 ```js
 document.querySelector('game-sample[name="ding"]').play();

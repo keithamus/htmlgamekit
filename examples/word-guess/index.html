@@ -52,20 +52,18 @@
       ></game-toast>
       <game-flash when-some-scene="playing between paused"></game-flash>
 
-      <game-audio>
-        <game-sample
-          trigger="pass"
-          type="marimba"
-          scale="pentatonic"
-          notes="5"
-          gain="0.25"
-          scale-root="440"
-          scale-spacing="0.08"
-        >
-        </game-sample>
-        <game-sample trigger="fail" type="noise" gain="0.3" duration="0.12">
-        </game-sample>
-      </game-audio>
+      <game-sample
+        trigger="pass"
+        type="marimba"
+        scale="pentatonic"
+        notes="5"
+        gain="0.25"
+        scale-root="440"
+        scale-spacing="0.08"
+      >
+      </game-sample>
+      <game-sample trigger="fail" type="noise" gain="0.3" duration="0.12">
+      </game-sample>
 
       <div when-some-scene="playing between paused">
         <word-game></word-game>

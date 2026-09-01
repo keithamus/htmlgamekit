@@ -1,5 +1,11 @@
 import GameComponent from "./component.js";
-import { getAudioCtx, synthMarimba, noteFreq, SYNTHS } from "./synth.js";
+import {
+  getAudioCtx,
+  getMasterGain,
+  synthMarimba,
+  noteFreq,
+  SYNTHS,
+} from "./synth.js";
 
 /**
  * Musical sequencer that plays accelerating note patterns or rising
@@ -35,36 +41,8 @@ export default class GameSequencer extends GameComponent {
 
   #lastScene = "";
 
-  connectedCallback() {
-    super.connectedCallback();
-    const shell = this.shell;
-    if (shell) {
-      shell.addEventListener(
-        "game-preference-change",
-        (e) => {
-          if (e.key === "sound") this.#sync();
-        },
-        { signal: this.signal },
-      );
-    }
-  }
-
   get #muted() {
-    return this.shell?.querySelector("game-audio")?.muted ?? false;
-  }
-
-  #sync() {
-    const s = this.#lastScene;
-    if (!this.#muted && (s === "playing" || s === "between")) {
-      if (!this.#scheduler && !this.#humOsc) this.start();
-    } else {
-      this.stop();
-    }
-  }
-
-  effectCallback({ scene }) {
-    this.#lastScene = scene.get();
-    this.#sync();
+    return this.shell?.muted.get() ?? false;
   }
 
   get #parsedNotes() {
@@ -72,6 +50,16 @@ export default class GameSequencer extends GameComponent {
       const n = s.trim();
       return n === "null" || n === "" ? null : Number(n);
     });
+  }
+
+  disconnectedCallback() {
+    this.stop();
+    super.disconnectedCallback();
+  }
+
+  effectCallback({ scene }) {
+    this.#lastScene = scene.get();
+    this.#sync();
   }
 
   start() {
@@ -107,7 +95,7 @@ export default class GameSequencer extends GameComponent {
     this.#humOsc = ctx.createOscillator();
     this.#humGain = ctx.createGain();
     this.#humOsc.connect(this.#humGain);
-    this.#humGain.connect(ctx.destination);
+    this.#humGain.connect(getMasterGain());
     this.#humOsc.type = "sine";
     this.#humOsc.frequency.setValueAtTime(startFreq, t);
     this.#humOsc.frequency.linearRampToValueAtTime(endFreq, t + dur);
@@ -146,6 +134,15 @@ export default class GameSequencer extends GameComponent {
     }
   }
 
+  #sync() {
+    const s = this.#lastScene;
+    if (!this.#muted && (s === "playing" || s === "between")) {
+      if (!this.#scheduler && !this.#humOsc) this.start();
+    } else {
+      this.stop();
+    }
+  }
+
   #scheduleNote() {
     const ctx = getAudioCtx();
     const notes = this.#parsedNotes;
@@ -177,10 +174,5 @@ export default class GameSequencer extends GameComponent {
       (this.#nextTime - ctx.currentTime - scheduleAhead) * 1000,
     );
     this.#scheduler = setTimeout(() => this.#scheduleNote(), delay);
-  }
-
-  disconnectedCallback() {
-    this.stop();
-    super.disconnectedCallback();
   }
 }

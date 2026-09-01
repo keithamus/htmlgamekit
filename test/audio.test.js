@@ -11,7 +11,7 @@ const microtask = () => new Promise((r) => queueMicrotask(r));
 
 const flush = tick;
 
-describe("game-audio", () => {
+describe("game-sample", () => {
   afterEach(() => {
     document.body.innerHTML = "";
     localStorage.clear();
@@ -19,14 +19,20 @@ describe("game-audio", () => {
     history.replaceState(null, "", location.pathname);
   });
 
-  it("muted and vibration default to false; volume defaults to 1", () => {
-    const el = document.createElement("game-audio");
-    assert.isFalse(el.muted);
-    assert.isFalse(el.vibration);
-    assert.equal(el.volume, 1);
+  it("attributes default to their specified defaults", () => {
+    const el = document.createElement("game-sample");
+    assert.isNull(el.type);
+    assert.isNull(el.duration);
+    assert.isNull(el.notes);
+    assert.isNull(el.scale);
+    assert.isNull(el.value);
+    assert.equal(el.gain, 0.35);
+    assert.equal(el.vibrate, "auto");
+    assert.equal(el.scaleRoot, 220);
+    assert.equal(el.scaleSpacing, 0.1);
   });
 
-  it("reflects declarative noise shaping attributes", () => {
+  it("reflects noise shaping attributes", () => {
     const el = document.createElement("game-sample");
     el.setAttribute("noise-decay", "0.12");
     el.setAttribute("noise-filter", "highpass");
@@ -37,16 +43,14 @@ describe("game-audio", () => {
     assert.equal(el.noiseFrequency, 1400);
   });
 
-  describe("muting", () => {
-    it("triggerCallback does NOT call play on samples when muted", async () => {
+  describe("self-triggered via trigger attribute", () => {
+    it("fires triggerCallback when trigger='pass' and pass fires", async () => {
       document.body.innerHTML = `
-        <game-shell rounds="5" between-delay="manual">
-          <game-audio muted>
-            <game-sample name="ding" trigger="pass" type="marimba" notes="523:0"></game-sample>
-          </game-audio>
-          <div when-some-scene="playing"><div id="trigger"></div></div>
-        </game-shell>
-      `;
+			<game-shell rounds="5" between-delay="manual">
+				<game-sample trigger="pass" type="marimba" notes="523:0" name="ding"></game-sample>
+				<div when-some-scene="playing"><div id="trigger"></div></div>
+			</game-shell>
+		`;
       await tick();
       const shell = document.querySelector("game-shell");
       const sample = document.querySelector("game-sample");
@@ -65,31 +69,28 @@ describe("game-audio", () => {
         .dispatchEvent(new GameRoundPassEvent(1, "Nice!"));
       await flush();
 
-      assert.isFalse(
-        playCalled,
-        "play should NOT be called when audio is muted",
-      );
+      assert.isTrue(playCalled, "play should be called when pass fires");
       sample.play = origPlay;
     });
 
-    it("triggerCallback DOES call play on samples when NOT muted", async () => {
+    it("does not fire when muted", async () => {
       document.body.innerHTML = `
-        <game-shell rounds="5" between-delay="manual">
-          <game-audio>
-            <game-sample name="ding" trigger="pass" type="marimba" notes="523:0"></game-sample>
-          </game-audio>
-          <div when-some-scene="playing"><div id="trigger"></div></div>
-        </game-shell>
-      `;
+			<game-shell rounds="5" between-delay="manual">
+				<game-sample trigger="pass" type="marimba" notes="523:0"></game-sample>
+				<div when-some-scene="playing"><div id="trigger"></div></div>
+			</game-shell>
+		`;
       await tick();
       const shell = document.querySelector("game-shell");
       const sample = document.querySelector("game-sample");
 
       let playCalled = false;
-      const origPlay = sample.play;
       sample.play = function () {
         playCalled = true;
       };
+
+      shell.muted.set(true);
+      await flush();
 
       shell.start();
       await flush();
@@ -99,60 +100,16 @@ describe("game-audio", () => {
         .dispatchEvent(new GameRoundPassEvent(1, "Nice!"));
       await flush();
 
-      assert.isTrue(
-        playCalled,
-        "play should be called when audio is not muted",
-      );
-      sample.play = origPlay;
-    });
-  });
-
-  describe("trigger routing", () => {
-    it("routes pass trigger to samples with trigger='pass'", async () => {
-      document.body.innerHTML = `
-        <game-shell rounds="5" between-delay="manual">
-          <game-audio>
-            <game-sample name="pass-sound" trigger="pass" type="marimba" notes="523:0"></game-sample>
-            <game-sample name="fail-sound" trigger="fail" type="marimba" notes="220:0"></game-sample>
-          </game-audio>
-          <div when-some-scene="playing"><div id="trigger"></div></div>
-        </game-shell>
-      `;
-      await tick();
-      const shell = document.querySelector("game-shell");
-
-      const played = [];
-      for (const s of document.querySelectorAll("game-sample")) {
-        s.play = function () {
-          played.push(s.name);
-        };
-      }
-
-      shell.start();
-      await flush();
-
-      document
-        .querySelector("#trigger")
-        .dispatchEvent(new GameRoundPassEvent(1, "Correct!"));
-      await flush();
-
-      assert.include(played, "pass-sound", "pass-sound should be played");
-      assert.notInclude(
-        played,
-        "fail-sound",
-        "fail-sound should NOT be played on pass",
-      );
+      assert.isFalse(playCalled, "play should NOT be called when muted");
     });
 
     it("routes fail trigger to samples with trigger='fail'", async () => {
       document.body.innerHTML = `
-        <game-shell rounds="5" between-delay="manual">
-          <game-audio>
-            <game-sample name="pass-sound" trigger="pass" type="marimba" notes="523:0"></game-sample>
-            <game-sample name="fail-sound" trigger="fail" type="marimba" notes="220:0"></game-sample>
-          </game-audio>
-          <div when-some-scene="playing"><div id="trigger"></div></div>
-        </game-shell>
+	<game-shell rounds="5" between-delay="manual">
+		<game-sample name="pass-sound" trigger="pass" type="marimba" notes="523:0"></game-sample>
+		<game-sample name="fail-sound" trigger="fail" type="marimba" notes="220:0"></game-sample>
+		<div when-some-scene="playing"><div id="trigger"></div></div>
+	</game-shell>
       `;
       await tick();
       const shell = document.querySelector("game-shell");
@@ -182,12 +139,10 @@ describe("game-audio", () => {
 
     it("routes start trigger to samples with trigger='start'", async () => {
       document.body.innerHTML = `
-        <game-shell rounds="5" between-delay="manual">
-          <game-audio>
-            <game-sample name="start-sound" trigger="start" type="marimba" notes="440:0"></game-sample>
-          </game-audio>
-          <div when-some-scene="playing"><div id="trigger"></div></div>
-        </game-shell>
+	<game-shell rounds="5" between-delay="manual">
+		<game-sample name="start-sound" trigger="start" type="marimba" notes="440:0"></game-sample>
+		<div when-some-scene="playing"><div id="trigger"></div></div>
+	</game-shell>
       `;
       await tick();
       const shell = document.querySelector("game-shell");
@@ -202,22 +157,83 @@ describe("game-audio", () => {
 
       assert.isTrue(playCalled, "start-sound should be played on game start");
     });
-  });
 
-  describe("condition filtering on samples", () => {
-    it("sample with when-min-score only plays when score >= threshold", async () => {
+    it("trigger='fail' fires on timeout when no trigger='timeout' sample exists (back-compat)", async () => {
       document.body.innerHTML = `
-        <game-shell rounds="5" between-delay="manual">
-          <game-audio>
-            <game-sample name="bonus" trigger="pass" type="marimba" notes="880:0"
-              when-min-score="5"></game-sample>
-          </game-audio>
-          <div when-some-scene="playing"><div id="trigger"></div></div>
-        </game-shell>
-      `;
+			<game-shell rounds="5" between-delay="manual">
+				<game-sample name="fail-sound" trigger="fail" type="marimba" notes="220:0"></game-sample>
+				<div when-some-scene="playing"><div id="trigger"></div></div>
+			</game-shell>
+		`;
       await tick();
       const shell = document.querySelector("game-shell");
-      const sample = document.querySelector('game-sample[name="bonus"]');
+
+      let playCalled = false;
+      document.querySelector("game-sample").play = function () {
+        playCalled = true;
+      };
+
+      shell.start();
+      await flush();
+
+      document
+        .querySelector("#trigger")
+        .dispatchEvent(new GameRoundFailEvent("Out of time!"));
+      await flush();
+
+      assert.isTrue(
+        playCalled,
+        "fail-sound should fire on timeout when no timeout sample exists",
+      );
+    });
+
+    it("trigger='fail' does NOT fire on timeout when trigger='timeout' sample exists", async () => {
+      document.body.innerHTML = `
+			<game-shell rounds="5" between-delay="manual">
+				<game-sample name="fail-sound" trigger="fail" type="marimba" notes="220:0"></game-sample>
+				<game-sample name="timeout-sound" trigger="timeout" type="marimba" notes="330:0"></game-sample>
+				<div when-some-scene="playing"><div id="trigger"></div></div>
+			</game-shell>
+		`;
+      await tick();
+      const shell = document.querySelector("game-shell");
+
+      const played = [];
+      for (const s of document.querySelectorAll("game-sample")) {
+        s.play = function () {
+          played.push(s.name);
+        };
+      }
+
+      shell.start();
+      await flush();
+
+      document
+        .querySelector("#trigger")
+        .dispatchEvent(new GameRoundFailEvent("Out of time!"));
+      await flush();
+
+      assert.include(played, "timeout-sound", "timeout-sound should fire");
+      assert.notInclude(
+        played,
+        "fail-sound",
+        "fail-sound should NOT fire on timeout when timeout sample exists",
+      );
+    });
+  });
+
+  describe("condition filtering", () => {
+    it("sample with when-min-score only plays when score >= threshold", async () => {
+      document.body.innerHTML = `
+			<game-shell rounds="5" between-delay="manual">
+				<game-sample name="bonus" trigger="pass" type="marimba" notes="880:0"
+					when-min-score="5"></game-sample>
+				<div when-some-scene="playing"><div id="trigger"></div></div>
+			</game-shell>
+		`;
+      await tick();
+      const shell = document.querySelector("game-shell");
+      const sample = document.querySelector("game-sample");
 
       let playCalled = false;
       sample.play = function () {
@@ -236,20 +252,18 @@ describe("game-audio", () => {
     });
   });
 
-  describe("value filtering on samples", () => {
+  describe("value filtering", () => {
     it('sample with value="3" only plays when event data matches', async () => {
       document.body.innerHTML = `
-        <game-shell rounds="5" between-delay="manual">
-          <game-audio>
-            <game-sample name="countdown-3" trigger="countdown" type="marimba"
-              notes="440:0" value="3"></game-sample>
-          </game-audio>
-          <div when-some-scene="playing"><div id="trigger"></div></div>
-        </game-shell>
-      `;
+			<game-shell rounds="5" between-delay="manual">
+				<game-sample name="countdown-3" trigger="countdown" type="marimba"
+					notes="440:0" value="3"></game-sample>
+				<div when-some-scene="playing"><div id="trigger"></div></div>
+			</game-shell>
+		`;
       await tick();
       const shell = document.querySelector("game-shell");
-      const sample = document.querySelector('game-sample[name="countdown-3"]');
+      const sample = document.querySelector("game-sample");
 
       const playCalls = [];
       sample.play = function () {
@@ -269,184 +283,45 @@ describe("game-audio", () => {
     });
   });
 
-  describe("timeoutCallback()", () => {
-    it("routes to triggerCallback('timeout') when a timeout sample exists", () => {
-      const audio = document.createElement("game-audio");
-      const sample = document.createElement("game-sample");
-      sample.setAttribute("trigger", "timeout");
-      audio.appendChild(sample);
-      const calls = [];
-      audio.triggerCallback = (name) => calls.push(name);
-      audio.timeoutCallback(null);
-      assert.deepEqual(calls, ["timeout"]);
-    });
+  describe("scale-mode state reading", () => {
+    it("reads shell state for scale-mode computation when no override", async () => {
+      document.body.innerHTML = `
+			<game-shell rounds="3" between-delay="manual" score-order="desc">
+				<game-sample name="scale-s" trigger="pass" scale="major" notes="5"></game-sample>
+				<div when-some-scene="playing"><div id="trigger"></div></div>
+			</game-shell>
+		`;
+      await tick();
+      const shell = document.querySelector("game-shell");
+      const sample = document.querySelector("game-sample");
 
-    it("routes to triggerCallback('fail') when no timeout sample exists", () => {
-      const audio = document.createElement("game-audio");
-      const sample = document.createElement("game-sample");
-      sample.setAttribute("trigger", "pass");
-      audio.appendChild(sample);
-      const calls = [];
-      audio.triggerCallback = (name) => calls.push(name);
-      audio.timeoutCallback(null);
-      assert.deepEqual(calls, ["fail"]);
-    });
+      shell.start();
+      await flush();
 
-    it("routes to triggerCallback('fail') when audio has no children", () => {
-      const audio = document.createElement("game-audio");
-      const calls = [];
-      audio.triggerCallback = (name) => calls.push(name);
-      audio.timeoutCallback(null);
-      assert.deepEqual(calls, ["fail"]);
-    });
-  });
-
-  describe("play() method", () => {
-    it("plays the named sample", () => {
-      const audio = document.createElement("game-audio");
-      const sample = document.createElement("game-sample");
-      sample.setAttribute("name", "click");
-      sample.setAttribute("type", "marimba");
-      sample.setAttribute("notes", "440:0");
-      audio.appendChild(sample);
-
-      let playState = null;
-      sample.play = function (state) {
-        playState = state;
-      };
-
-      audio.play("click");
-      assert.isNotNull(playState, "sample.play should have been called");
-    });
-
-    it("does nothing when no sample matches the name", () => {
-      const audio = document.createElement("game-audio");
-      const sample = document.createElement("game-sample");
-      sample.setAttribute("name", "click");
-      audio.appendChild(sample);
-
+      // Verify sample fires on pass (uses shell state internally)
       let playCalled = false;
       sample.play = function () {
         playCalled = true;
       };
-
-      audio.play("nonexistent");
-      assert.isFalse(playCalled);
-    });
-
-    it("passes state argument to sample.play", () => {
-      const audio = document.createElement("game-audio");
-      const sample = document.createElement("game-sample");
-      sample.setAttribute("name", "ding");
-      audio.appendChild(sample);
-
-      let receivedState = null;
-      sample.play = function (state) {
-        receivedState = state;
-      };
-
-      const mockState = { score: 10, round: 2 };
-      audio.play("ding", mockState);
-      assert.deepEqual(receivedState, mockState);
-    });
-  });
-
-  describe("scale mode trigger path", () => {
-    it("passes shell state snapshot to scale-mode sample.play() from triggerCallback", async () => {
-      document.body.innerHTML = `
-        <game-shell rounds="3" between-delay="manual" score-order="desc">
-          <game-audio>
-            <game-sample name="scale-sound" trigger="pass"
-              scale="pentatonic" notes="5"></game-sample>
-          </game-audio>
-          <div when-some-scene="playing"><div id="trigger"></div></div>
-        </game-shell>
-      `;
-      await tick();
-      const shell = document.querySelector("game-shell");
-      const sample = document.querySelector("game-sample");
-
-      let receivedState = undefined;
-      const origPlay = sample.play.bind(sample);
-      sample.play = function (state) {
-        receivedState = state;
-      };
-
-      shell.start();
-      await flush();
-
-      document
-        .querySelector("#trigger")
-        .dispatchEvent(new GameRoundPassEvent(2, "Nice!"));
-      await flush();
-
-      assert.isNotNull(
-        receivedState,
-        "scale sample.play should receive a state object",
-      );
-      assert.property(
-        receivedState,
-        "roundScores",
-        "state should include roundScores",
-      );
-      assert.property(receivedState, "rounds", "state should include rounds");
-      assert.property(
-        receivedState,
-        "scoreOrder",
-        "state should include scoreOrder",
-      );
-    });
-
-    it("state passed to scale sample reflects current shell signal values", async () => {
-      document.body.innerHTML = `
-        <game-shell rounds="3" between-delay="manual" score-order="asc">
-          <game-audio>
-            <game-sample name="scale-s" trigger="pass" scale="major" notes="5"></game-sample>
-          </game-audio>
-          <div when-some-scene="playing"><div id="trigger"></div></div>
-        </game-shell>
-      `;
-      await tick();
-      const shell = document.querySelector("game-shell");
-      const sample = document.querySelector("game-sample");
-
-      let receivedState = null;
-      sample.play = function (state) {
-        receivedState = state;
-      };
-
-      shell.start();
-      await flush();
 
       document
         .querySelector("#trigger")
         .dispatchEvent(new GameRoundPassEvent(10, "Good!"));
       await flush();
 
-      assert.equal(receivedState.rounds, 3, "rounds should match shell.rounds");
-      assert.equal(
-        receivedState.scoreOrder,
-        "asc",
-        "scoreOrder should match shell.scoreOrder",
-      );
-      assert.isArray(
-        receivedState.roundScores,
-        "roundScores should be an array",
-      );
+      assert.isTrue(playCalled, "scale-mode sample should fire on pass");
     });
   });
 
-  describe("multiple samples for the same trigger", () => {
-    it("plays all matching samples", async () => {
+  describe("multiple samples same trigger", () => {
+    it("fires all matching samples", async () => {
       document.body.innerHTML = `
-        <game-shell rounds="5" between-delay="manual">
-          <game-audio>
-            <game-sample name="ding1" trigger="pass" type="marimba" notes="523:0"></game-sample>
-            <game-sample name="ding2" trigger="pass" type="marimba" notes="659:0"></game-sample>
-          </game-audio>
-          <div when-some-scene="playing"><div id="trigger"></div></div>
-        </game-shell>
-      `;
+			<game-shell rounds="5" between-delay="manual">
+				<game-sample name="ding1" trigger="pass" type="marimba" notes="523:0"></game-sample>
+				<game-sample name="ding2" trigger="pass" type="marimba" notes="659:0"></game-sample>
+				<div when-some-scene="playing"><div id="trigger"></div></div>
+			</game-shell>
+		`;
       await tick();
       const shell = document.querySelector("game-shell");
 
@@ -472,7 +347,7 @@ describe("game-audio", () => {
   });
 });
 
-describe("game-sample", () => {
+describe("game-audio (deprecated)", () => {
   afterEach(() => {
     document.body.innerHTML = "";
     localStorage.clear();
@@ -480,16 +355,63 @@ describe("game-sample", () => {
     history.replaceState(null, "", location.pathname);
   });
 
-  it("type, duration, notes, scale, value default to null; gain to 0.35; vibrate to auto; scaleRoot to 220; scaleSpacing to 0.1", () => {
-    const el = document.createElement("game-sample");
-    assert.isNull(el.type);
-    assert.isNull(el.duration);
-    assert.isNull(el.notes);
-    assert.isNull(el.scale);
-    assert.isNull(el.value);
-    assert.equal(el.gain, 0.35);
-    assert.equal(el.vibrate, "auto");
-    assert.equal(el.scaleRoot, 220);
-    assert.equal(el.scaleSpacing, 0.1);
+  it("emits deprecation warning on connect", async () => {
+    let warnCalled = false;
+    const origWarn = console.warn;
+    console.warn = function (msg) {
+      if (msg && msg.includes("<game-audio> is deprecated")) warnCalled = true;
+      origWarn(msg);
+    };
+
+    document.body.innerHTML = `
+		<game-shell>
+			<game-audio></game-audio>
+		</game-shell>
+	`;
+
+    await tick();
+
+    assert.isTrue(warnCalled, "should emit deprecation warning");
+    console.warn = origWarn;
+  });
+
+  it("back-compat: .play(name) delegates to child sample", async () => {
+    document.body.innerHTML = `
+		<game-shell>
+			<game-audio>
+				<game-sample name="click" type="marimba" notes="440:0"></game-sample>
+			</game-audio>
+		</game-shell>
+	`;
+    await tick();
+
+    const audio = document.querySelector("game-audio");
+    const sample = document.querySelector("game-sample");
+
+    let playCalled = false;
+    sample.play = function () {
+      playCalled = true;
+    };
+
+    audio.play("click");
+    assert.isTrue(playCalled);
+  });
+
+  it("back-compat: explicit attributes update shell audio signals", async () => {
+    document.body.innerHTML = `
+		<game-shell>
+			<game-audio muted volume="0.4" vibration></game-audio>
+		</game-shell>
+	`;
+    await tick();
+
+    const shell = document.querySelector("game-shell");
+    const audio = document.querySelector("game-audio");
+    assert.isTrue(shell.muted.get());
+    assert.equal(shell.volume.get(), 0.4);
+    assert.isTrue(shell.vibration.get());
+
+    audio.volume = 0.2;
+    assert.equal(shell.volume.get(), 0.2);
   });
 });

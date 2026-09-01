@@ -29,17 +29,19 @@ function saveStored(key, obj) {
   } catch {}
 }
 
-function applyToAudio(pref, value) {
+function applyToShell(pref, value) {
   const shell = pref.closest("game-shell");
   if (!shell) return;
-  const audio = shell.querySelector("game-audio");
   const key = pref.key;
   if (key === "sound") {
-    if (audio) audio.muted = !value;
-    if (shell.muted) shell.muted.set(!value);
+    shell.muted.set(!value);
   }
-  if (key === "volume" && audio) audio.volume = value / 100;
-  if (key === "vibration" && audio) audio.vibration = !!value;
+  if (key === "volume") {
+    shell.volume.set(value / 100);
+  }
+  if (key === "vibration") {
+    shell.vibration.set(!!value);
+  }
 }
 
 /**
@@ -64,13 +66,13 @@ export class GamePreference extends HTMLElement {
     max: { type: "string", default: "100" },
   };
 
-  #value = undefined;
-  #connected = false;
-
   static define(tag = "game-preference", registry = customElements) {
     initAttrs(this);
     registry.define(tag, this);
   }
+
+  #value = undefined;
+  #connected = false;
 
   get boolean() {
     return this.default === "true" || this.default === "false";
@@ -92,7 +94,7 @@ export class GamePreference extends HTMLElement {
     const sKey = storageKey(this);
     const stored = loadStored(sKey);
     if (stored && this.key in stored) this.#value = stored[this.key];
-    applyToAudio(this, this.#value);
+    applyToShell(this, this.#value);
   }
 
   disconnectedCallback() {
@@ -102,7 +104,7 @@ export class GamePreference extends HTMLElement {
   set(value) {
     this.#value = value;
     this.#persist();
-    applyToAudio(this, value);
+    applyToShell(this, value);
     this.dispatchEvent(new GamePreferenceChangeEvent(this.key, value));
   }
 
@@ -222,11 +224,6 @@ export default class GamePreferences extends GameComponent {
 
   static template = `<div class="prefs"><h2>Preferences</h2><div class="pref-list"></div><button class="done-btn" type="button">Done</button></div>`;
 
-  get(key) {
-    const pref = this.querySelector(`game-preference[key="${key}"]`);
-    return pref?.value;
-  }
-
   connectedCallback() {
     super.connectedCallback();
     this.#render();
@@ -238,6 +235,11 @@ export default class GamePreferences extends GameComponent {
       },
       { signal: this.signal },
     );
+  }
+
+  get(key) {
+    const pref = this.querySelector(`game-preference[key="${key}"]`);
+    return pref?.value;
   }
 
   #render() {

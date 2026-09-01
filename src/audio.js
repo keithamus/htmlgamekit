@@ -45,14 +45,14 @@ function vibrateFromScale(noteCount, spacingMs) {
 }
 
 /**
- * Defines a single sound sample for use within a `<game-audio>` parent.
+ * Defines a single sound sample for use within a `<game-shell>`.
  * Supports synthesized tones (marimba, sine, etc.), noise bursts,
- * scale-based scoring sounds, and haptic vibration. Trigger-matched
- * by the parent audio element.
+ * scale-based scoring sounds, and haptic vibration. Auto-triggers
+ * based on `trigger` attribute and game state transitions.
  *
  * @summary Individual sound/vibration sample definition
  */
-export class GameSample extends HTMLElement {
+export class GameSample extends GameComponent {
   static attrs = {
     name: { type: "string" },
     trigger: { type: "string" },
@@ -70,29 +70,69 @@ export class GameSample extends HTMLElement {
     value: { type: "string?" },
   };
 
+  static template = null;
+
   static define(tag = "game-sample", registry = customElements) {
     initAttrs(this);
     registry.define(tag, this);
   }
 
-  #vibrate(pattern) {
-    const audio = this.closest("game-audio");
-    const vibrationEnabled = !audio || audio.vibration;
-    if (vibrationEnabled && navigator.vibrate) {
-      navigator.vibrate(pattern);
+  #warnedTimeoutFallback = false;
+
+  timeoutCallback() {
+    if (this.trigger === "timeout") {
+      this.triggerCallback("timeout", null);
+      return;
     }
+    if (this.trigger !== "fail") return;
+    const shell = this.shell;
+    if (shell?.querySelector('game-sample[trigger="timeout"]')) return;
+    if (!this.#warnedTimeoutFallback) {
+      this.#warnedTimeoutFallback = true;
+      console.warn(
+        "<game-sample trigger='fail'> firing on timeout is deprecated back-compat behaviour. " +
+          "Add <game-sample trigger='timeout'> for timeout sounds. Will be removed in the next major version.",
+      );
+    }
+    this.triggerCallback("fail", null);
+  }
+
+  triggerCallback(name, event) {
+    if (name !== this.trigger) return;
+    const shell = this.shell;
+    if (shell?.muted.get()) return;
+    if (!matchesConditions(this, shell)) return;
+
+    const val = this.value;
+    if (val !== null && event) {
+      const eventVal = event.seconds ?? event.value ?? event.detail;
+      if (String(eventVal) !== val) return;
+    }
+
+    this.play();
   }
 
   /**
    * Play this sample immediately.
    *
-   * @param {object} [state] - Game state snapshot. Required when `scale` is
-   *   set — reads `state.roundScores`, `state.rounds`, and `state.scoreOrder`
-   *   to compute note count and pitch proportionally to the last round's score.
-   *   Omit (or pass null) for fixed-note samples.
+   * @param {object} [stateOverride] - Optional game state snapshot to override
+   *   shell signals. If omitted, reads from shell signals (roundScores, rounds,
+   *   scoreOrder) for scale-mode computation. Required only for advanced use.
    */
-  play(state) {
+  play(stateOverride) {
+    const shell = this.shell;
+    if (shell?.muted.get()) return;
+
     if (this.scale !== null) {
+      const state =
+        stateOverride ||
+        (shell
+          ? {
+              roundScores: shell.roundScores.get(),
+              rounds: shell.rounds.get(),
+              scoreOrder: shell.scoreOrder.get(),
+            }
+          : null);
       this.#playScale(state);
       return;
     }
@@ -192,15 +232,25 @@ export class GameSample extends HTMLElement {
       synth(ctx, freq, spacing * i, gain, duration);
     }
   }
+
+  #vibrate(pattern) {
+    const vibrationEnabled = this.shell?.vibration.get() ?? false;
+    if (vibrationEnabled && navigator.vibrate) {
+      navigator.vibrate(pattern);
+    }
+  }
 }
 
 /**
- * Audio controller that manages sound playback and haptic feedback.
- * Contains `<game-sample>` children and plays them in response to
- * game triggers (pass, fail, timeout, countdown, etc.). Respects
- * mute state and volume level.
+ * @deprecated Since v1.x. Use `<game-sample>` elements as direct children of
+ * `<game-shell>` instead. This element is now a pass-through for back-compat
+ * and will be removed in the next major version.
  *
- * @summary Audio/vibration controller for game sounds
+ * Audio controller that manages sound playback and haptic feedback.
+ * Contains `<game-sample>` children. Now primarily a back-compat shim that
+ * mirrors attributes to/from shell signals.
+ *
+ * @summary Deprecated audio container (use game-sample directly)
  */
 export default class GameAudio extends GameComponent {
   static attrs = {
@@ -209,58 +259,34 @@ export default class GameAudio extends GameComponent {
     volume: { type: "number", default: 1 },
   };
 
+  connectedCallback() {
+    super.connectedCallback();
+    for (const name of ["muted", "volume", "vibration"]) {
+      if (this.hasAttribute(name)) this.#syncAttribute(name);
+    }
+    console.warn(
+      "<game-audio> is deprecated; place <game-sample> elements directly under <game-shell>. Will be removed in next major version.",
+    );
+  }
+
+  attributeChanged(name) {
+    if (this.isConnected) this.#syncAttribute(name);
+  }
+
   /**
    * Manually play a named sample by its `name` attribute.
+   * Back-compat wrapper.
    *
    * @param {string} name
-   * @param {object} [state] - Passed to `GameSample.play()`. Required for
-   *   scale-mode samples; see `GameSample.play()` for details.
+   * @param {object} [state] - Ignored; samples read from shell signals.
    */
   play(name, state) {
     const sample = this.querySelector(`game-sample[name="${name}"]`);
-    if (sample) this.#playSample(sample, state);
+    if (sample) sample.play(state);
   }
 
-  timeoutCallback(event) {
-    if (this.querySelector('game-sample[trigger="timeout"]')) {
-      this.triggerCallback("timeout", event);
-    } else {
-      this.triggerCallback("fail", event);
-    }
-  }
-
-  triggerCallback(triggerName, event) {
-    if (this.muted) return;
-    const shell = this.shell;
-    const state = shell
-      ? {
-          roundScores: shell.roundScores.get(),
-          rounds: shell.rounds.get(),
-          scoreOrder: shell.scoreOrder.get(),
-        }
-      : null;
-    for (const el of this.querySelectorAll(
-      `game-sample[trigger="${triggerName}"]`,
-    )) {
-      if (!matchesConditions(el, shell)) continue;
-      const val = el.value;
-      if (val !== null && event) {
-        const eventVal = event.seconds ?? event.value ?? event.detail;
-        if (String(eventVal) !== val) continue;
-      }
-      this.#playSample(el, state);
-    }
-  }
-
-  #playSample(el, state) {
-    const vol = this.volume;
-    if (vol !== 1) {
-      const origGain = el.gain;
-      el.gain = origGain * vol;
-      el.play(state);
-      el.gain = origGain;
-    } else {
-      el.play(state);
-    }
+  #syncAttribute(name) {
+    const signal = this.shell?.[name];
+    if (signal) signal.set(this[name]);
   }
 }
