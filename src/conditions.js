@@ -44,11 +44,6 @@ function sceneValues(val) {
     .flatMap((v) => (v === "intro" ? [...SCENE_INTRO] : [v]));
 }
 
-/** @deprecated Use camelCase key resolution instead. Only kept for difficulty/stats fallback matching. */
-export function normalise(str) {
-  return str.replace(/-/g, "").toLowerCase();
-}
-
 export function resolve(key, shell) {
   const sig = shell[key];
   if (sig && typeof sig.get === "function") return sig.get();
