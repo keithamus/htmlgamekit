@@ -500,41 +500,38 @@ export default class GameShell extends HTMLElement {
 
     this.#abort = new AbortController();
     const { signal } = this.#abort;
+    // Handlers run synchronously inside the dispatcher. Untrack them so a
+    // component that dispatches from an effect does not pick up the shell
+    // signals these handlers read as its own effect dependencies.
+    const on = (type, handler) =>
+      this.addEventListener(
+        type,
+        (e) => Signal.subtle.untrack(() => handler(e)),
+        { signal },
+      );
 
-    this.addEventListener(
-      "game-trophy-unlock",
-      (e) => {
-        e.stopPropagation();
-        if (e.trophyId && !this.#trophyUnlocked.has(e.trophyId)) {
-          this.#trophyUnlocked.add(e.trophyId);
-          this.#saveTrophies();
-          this.#trophyService.unlockTrophy(e.trophyId);
-        }
-      },
-      { signal },
-    );
+    on("game-trophy-unlock", (e) => {
+      e.stopPropagation();
+      if (e.trophyId && !this.#trophyUnlocked.has(e.trophyId)) {
+        this.#trophyUnlocked.add(e.trophyId);
+        this.#saveTrophies();
+        this.#trophyService.unlockTrophy(e.trophyId);
+      }
+    });
 
-    this.addEventListener(
-      "game-collection-add",
-      (e) => {
-        e.stopPropagation();
-        if (e.collection && e.itemId) {
-          this.addToCollection(e.collection, e.itemId);
-        }
-      },
-      { signal },
-    );
+    on("game-collection-add", (e) => {
+      e.stopPropagation();
+      if (e.collection && e.itemId) {
+        this.addToCollection(e.collection, e.itemId);
+      }
+    });
 
-    this.addEventListener(
-      "game-collection-remove",
-      (e) => {
-        e.stopPropagation();
-        if (e.collection && e.itemId) {
-          this.removeFromCollection(e.collection, e.itemId);
-        }
-      },
-      { signal },
-    );
+    on("game-collection-remove", (e) => {
+      e.stopPropagation();
+      if (e.collection && e.itemId) {
+        this.removeFromCollection(e.collection, e.itemId);
+      }
+    });
 
     if (!this.#progression && this.progression) {
       this.#progression = this.#createProgression();
@@ -611,157 +608,109 @@ export default class GameShell extends HTMLElement {
       }
     });
 
-    this.addEventListener(
-      "game-round-pass",
-      (e) => {
-        e.stopPropagation();
-        if (this.scene.get() !== "playing") return;
-        this.#scores.recordCheckin();
-        this.#roundPass(e.score, e.feedback);
-      },
-      { signal },
-    );
+    on("game-round-pass", (e) => {
+      e.stopPropagation();
+      if (this.scene.get() !== "playing") return;
+      this.#scores.recordCheckin();
+      this.#roundPass(e.score, e.feedback);
+    });
 
-    this.addEventListener(
-      "game-round-fail",
-      (e) => {
-        e.stopPropagation();
-        if (this.scene.get() !== "playing") return;
-        if (!e.retry) this.#scores.recordCheckin();
-        this.#roundFail(e.reason, e.retry);
-      },
-      { signal },
-    );
+    on("game-round-fail", (e) => {
+      e.stopPropagation();
+      if (this.scene.get() !== "playing") return;
+      if (!e.retry) this.#scores.recordCheckin();
+      this.#roundFail(e.reason, e.retry);
+    });
 
-    this.addEventListener(
-      "game-timer-expired",
-      (e) => {
-        e.stopPropagation();
-        if (this.scene.get() !== "playing") return;
-        this.#roundFail("Time's up!", false);
-      },
-      { signal },
-    );
+    on("game-timer-expired", (e) => {
+      e.stopPropagation();
+      if (this.scene.get() !== "playing") return;
+      this.#roundFail("Time's up!", false);
+    });
 
-    this.addEventListener(
-      "game-stat-update",
-      (e) => {
-        e.stopPropagation();
-        this.stats.set({ ...this.stats.get(), [e.key]: e.value });
-      },
-      { signal },
-    );
+    on("game-stat-update", (e) => {
+      e.stopPropagation();
+      this.stats.set({ ...this.stats.get(), [e.key]: e.value });
+    });
 
-    this.addEventListener(
-      "game-start-request",
-      (e) => {
-        e.stopPropagation();
+    on("game-start-request", (e) => {
+      e.stopPropagation();
+      this.start();
+    });
+
+    on("game-restart-request", (e) => {
+      e.stopPropagation();
+      this.start();
+    });
+
+    on("game-practice-start", (e) => {
+      e.stopPropagation();
+      this.scene.set("practice");
+    });
+
+    on("game-complete", (e) => {
+      e.stopPropagation();
+      if (e.score != null) this.score.set(e.score);
+      this.scene.set("result");
+    });
+
+    on("game-pause-request", (e) => {
+      e.stopPropagation();
+      this.pause();
+    });
+
+    on("game-resume-request", (e) => {
+      e.stopPropagation();
+      this.resume();
+    });
+
+    on("game-next-round", (e) => {
+      e.stopPropagation();
+      if (this.scene.get() === "between") {
+        clearTimeout(this.#betweenTimer);
+        this.round.set(this.round.get() + 1);
+        this.scene.set("playing");
+      }
+    });
+
+    on("command", (e) => {
+      const val = e.source?.value ?? "";
+      if (e.command === "--start" || e.command === "--restart") {
         this.start();
-      },
-      { signal },
-    );
-
-    this.addEventListener(
-      "game-restart-request",
-      (e) => {
-        e.stopPropagation();
-        this.start();
-      },
-      { signal },
-    );
-
-    this.addEventListener(
-      "game-practice-start",
-      (e) => {
-        e.stopPropagation();
-        this.scene.set("practice");
-      },
-      { signal },
-    );
-
-    this.addEventListener(
-      "game-complete",
-      (e) => {
-        e.stopPropagation();
-        if (e.score != null) this.score.set(e.score);
-        this.scene.set("result");
-      },
-      { signal },
-    );
-
-    this.addEventListener(
-      "game-pause-request",
-      (e) => {
-        e.stopPropagation();
+      } else if (e.command === "--pause") {
         this.pause();
-      },
-      { signal },
-    );
-
-    this.addEventListener(
-      "game-resume-request",
-      (e) => {
-        e.stopPropagation();
+      } else if (e.command === "--resume") {
         this.resume();
-      },
-      { signal },
-    );
-
-    this.addEventListener(
-      "game-next-round",
-      (e) => {
-        e.stopPropagation();
+      } else if (e.command === "--practice") {
+        this.scene.set("practice");
+      } else if (e.command === "--next-round") {
         if (this.scene.get() === "between") {
           clearTimeout(this.#betweenTimer);
           this.round.set(this.round.get() + 1);
           this.scene.set("playing");
         }
-      },
-      { signal },
-    );
-
-    this.addEventListener(
-      "command",
-      (e) => {
-        const val = e.source?.value ?? "";
-        if (e.command === "--start" || e.command === "--restart") {
-          this.start();
-        } else if (e.command === "--pause") {
-          this.pause();
-        } else if (e.command === "--resume") {
-          this.resume();
-        } else if (e.command === "--practice") {
-          this.scene.set("practice");
-        } else if (e.command === "--next-round") {
-          if (this.scene.get() === "between") {
-            clearTimeout(this.#betweenTimer);
-            this.round.set(this.round.get() + 1);
-            this.scene.set("playing");
-          }
-        } else if (e.command === "--stat") {
-          const sep = val.indexOf(":");
-          if (sep > 0) {
-            const key = val.slice(0, sep);
-            const v = val.slice(sep + 1);
-            this.stats.set({ ...this.stats.get(), [key]: v });
-          }
-        } else if (e.command === "--collect") {
-          const sep = val.indexOf(":");
-          if (sep > 0) {
-            this.addToCollection(val.slice(0, sep), val.slice(sep + 1));
-          }
-        } else if (e.command === "--uncollect") {
-          const sep = val.indexOf(":");
-          if (sep > 0) {
-            this.removeFromCollection(val.slice(0, sep), val.slice(sep + 1));
-          }
-        } else if (e.command === "--toggle-mute") {
-          const pref = this.querySelector('game-preference[key="sound"]');
-          if (pref) pref.toggle();
+      } else if (e.command === "--stat") {
+        const sep = val.indexOf(":");
+        if (sep > 0) {
+          const key = val.slice(0, sep);
+          const v = val.slice(sep + 1);
+          this.stats.set({ ...this.stats.get(), [key]: v });
         }
-      },
-      { signal },
-    );
+      } else if (e.command === "--collect") {
+        const sep = val.indexOf(":");
+        if (sep > 0) {
+          this.addToCollection(val.slice(0, sep), val.slice(sep + 1));
+        }
+      } else if (e.command === "--uncollect") {
+        const sep = val.indexOf(":");
+        if (sep > 0) {
+          this.removeFromCollection(val.slice(0, sep), val.slice(sep + 1));
+        }
+      } else if (e.command === "--toggle-mute") {
+        const pref = this.querySelector('game-preference[key="sound"]');
+        if (pref) pref.toggle();
+      }
+    });
 
     document.addEventListener(
       "visibilitychange",

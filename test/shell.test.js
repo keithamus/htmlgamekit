@@ -9,6 +9,7 @@ import {
   GameNextRoundEvent,
   GameLifecycleEvent,
 } from "../src/events.js";
+import { effect } from "../src/signals.js";
 
 const settle = () => new Promise((r) => setTimeout(r, 0));
 
@@ -659,6 +660,32 @@ describe("GameShell", () => {
       const shell = await createDaily();
       assert.equal(shell.scene.get(), "result");
       assert.equal(shell.score.get(), 10);
+    });
+  });
+
+  describe("event handlers", () => {
+    it("does not leak its own signal reads into a dispatching effect", async () => {
+      const shell = await createShell();
+      const probe = document.createElement("div");
+      shell.appendChild(probe);
+
+      let runs = 0;
+      const dispose = effect(() => {
+        runs++;
+        shell.scene.get();
+        probe.dispatchEvent(new GameStatUpdateEvent("probe", runs));
+      });
+      await settle();
+      assert.equal(runs, 1);
+
+      // The handler reads this.stats.get(); if that read were tracked, this
+      // unrelated update would re-run the effect above (and loop forever).
+      probe.dispatchEvent(new GameStatUpdateEvent("other", "x"));
+      await settle();
+      assert.equal(runs, 1, "effect must not depend on stats");
+      assert.equal(shell.stats.get().probe, 1);
+      assert.equal(shell.stats.get().other, "x");
+      dispose();
     });
   });
 });
