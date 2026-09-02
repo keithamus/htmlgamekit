@@ -207,5 +207,28 @@ describe("context", () => {
       );
       assert.deepEqual(values, [], "should not deliver when already aborted");
     });
+
+    it("retries once so a provider registered later is still found", async () => {
+      const ctx = createContext("late-ctx");
+      const values = [];
+      subscribe(host, ctx, (value) => values.push(value));
+      assert.deepEqual(values, [], "no provider yet");
+
+      const provider = new ContextProvider(host, ctx, "late");
+      await Promise.resolve();
+      assert.deepEqual(values, ["late"]);
+
+      provider.setValue("later");
+      assert.deepEqual(values, ["late", "later"]);
+    });
+
+    it("does not retry once a provider has answered", async () => {
+      const ctx = createContext("early-ctx");
+      new ContextProvider(host, ctx, "early");
+      const values = [];
+      subscribe(host, ctx, (value) => values.push(value));
+      await Promise.resolve();
+      assert.deepEqual(values, ["early"], "delivered exactly once");
+    });
   });
 });

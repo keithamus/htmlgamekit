@@ -55,12 +55,21 @@ export class ContextProvider {
 
 export function subscribe(host, context, callback, { signal } = {}) {
   let unsubscribe;
+  let answered = false;
   const wrapper = (value, unsub) => {
+    answered = true;
     if (unsub !== undefined) unsubscribe = unsub;
     if (!signal?.aborted) callback(value);
   };
   _prevent_gc(signal, wrapper);
-  host.dispatchEvent(new ContextRequestEvent(context, wrapper, true));
+  const request = () =>
+    host.dispatchEvent(new ContextRequestEvent(context, wrapper, true));
+  request();
+  if (!answered) {
+    queueMicrotask(() => {
+      if (!answered && !signal?.aborted) request();
+    });
+  }
   signal?.addEventListener(
     "abort",
     () => {
