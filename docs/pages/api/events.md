@@ -255,9 +255,11 @@ The shell merges this into the `stats` signal, so any component observing it wil
 
 ## GameLifecycleEvent
 
-Fired by `<game-shell>` on every scene transition and at the start of `.start()`. This is the primary event for reacting to game scene changes.
+Fired by `<game-shell>` on every scene transition, at the start of `.start()` and at the start of `.quit()`. This is the primary event for reacting to game scene changes.
 
 The special `"setup"` action fires synchronously at the start of `.start()` **before** stats are wiped and the scene changes to `"playing"`. Use this to initialise game state (set stats, collections, etc.) on game start/restart. Stats set during `"setup"` survive into the `"playing"` phase.
+
+The special `"quit"` action fires synchronously at the start of `.quit()` **before** the scene changes to `"ready"`. Components drop state tied to the abandoned game here: `<game-lobby>` leaves its room, `<game-peer-connection>` closes.
 
 <dl class="def">
 
@@ -268,13 +270,13 @@ The special `"setup"` action fires synchronously at the start of `.start()` **be
 
 **Parameters:**
 
-- `action` — `string` — The new scene name (e.g. `"playing"`, `"between"`, `"result"`) or `"setup"`.
+- `action` — `string` — The new scene name (e.g. `"playing"`, `"between"`, `"result"`), `"setup"` or `"quit"`.
 - `state` — `object` — A snapshot of the full game state after the transition.
 
 </dd>
 
 <dt><span class="badge prop">.action</span></dt>
-<dd><code>string</code> — The triggering action. Scene names plus the special <code>"setup"</code> value.</dd>
+<dd><code>string</code> — The triggering action. Scene names plus the special <code>"setup"</code> and <code>"quit"</code> values.</dd>
 
 <dt><span class="badge prop">.state</span></dt>
 <dd><code>object</code> — Full state snapshot.</dd>

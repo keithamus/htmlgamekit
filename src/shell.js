@@ -709,6 +709,8 @@ export default class GameShell extends HTMLElement {
       } else if (e.command === "--toggle-mute") {
         const pref = this.querySelector('game-preference[key="sound"]');
         if (pref) pref.toggle();
+      } else if (e.command === "--quit") {
+        this.quit();
       }
     });
 
@@ -903,6 +905,17 @@ export default class GameShell extends HTMLElement {
   resume() {
     if (this.scene.get() !== "paused") return;
     this.scene.set("playing");
+  }
+
+  /**
+   * Abandon the current game and return to the "ready" scene. Dispatches a
+   * `game-lifecycle` event with action "quit" first, so components can drop
+   * state tied to the game (a lobby leaves its room, a peer connection closes).
+   */
+  quit() {
+    clearTimeout(this.#betweenTimer);
+    this.dispatchEvent(new GameLifecycleEvent("quit", this.#stateSnapshot()));
+    this.scene.set("ready");
   }
 
   #effect(fn) {

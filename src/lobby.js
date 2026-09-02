@@ -100,6 +100,7 @@ export default class GameLobby extends GameComponent {
       "game-lifecycle",
       (e) => {
         if (e.action === "setup") this.#republishStats();
+        else if (e.action === "quit" && this.#inRoom()) this.leaveRoom();
       },
       { signal: this.signal },
     );
@@ -202,6 +203,10 @@ export default class GameLobby extends GameComponent {
     else if (e.command === "--lobby-ready") this.ready();
     else if (e.command === "--lobby-unready") this.unready();
     else if (e.command === "--set-preference") this.setPreference(value);
+  }
+
+  #inRoom() {
+    return this.#states.has("in-room") || this.#states.has("signalling");
   }
 
   #connect() {

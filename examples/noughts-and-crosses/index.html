@@ -254,15 +254,17 @@
           Play again
         </button>
         <p data-rematch-wait>Waiting for your opponent to accept...</p>
+        <button commandfor="game" command="--quit">Find a new game</button>
       </div>
 
-      <!-- The peer went away: covers every scene, so it wins over the board -->
+      <!-- The peer went away: covers every scene, so it wins over the board.
+           Quitting closes the match, leaves the room and returns to the menu. -->
       <div when-eq-peer-state="disconnected" data-overlay>
         <hgroup>
           <h1>Opponent disconnected</h1>
         </hgroup>
-        <p>They closed the game or lost their connection.</p>
-        <button id="btn-lobby">Back to the lobby</button>
+        <p>They left the game or lost their connection.</p>
+        <button commandfor="game" command="--quit">Back to the lobby</button>
       </div>
     </game-shell>
 

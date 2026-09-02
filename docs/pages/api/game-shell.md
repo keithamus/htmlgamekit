@@ -306,6 +306,7 @@ The shell supports the <a href="https://developer.mozilla.org/en-US/docs/Web/API
 | `--collect`     | Adds to a collection. `value="collection:itemId"`              |
 | `--uncollect`   | Removes from a collection. `value="collection:itemId"`         |
 | `--toggle-mute` | Toggles the `sound` `<game-preference>`, muting/unmuting audio |
+| `--quit`        | Calls `shell.quit()` -- abandons the game, back to `ready`     |
 
 The `--stat`, `--collect`, and `--uncollect` commands read their data from the `value` attribute on the invoking button, using `key:value` syntax where everything before the first `:` is the key/collection name and everything after is the value/item ID.
 
@@ -571,6 +572,11 @@ Pauses the game if currently playing. Sets <code>scene</code> to <code>"paused"<
 Resumes a paused game. Sets <code>scene</code> back to <code>"playing"</code>.
 </dd>
 
+<dt><span class="badge method">.quit()</span></dt>
+<dd>
+Abandons the current game from any scene and returns to <code>"ready"</code>. Dispatches a <code>game-lifecycle</code> event with action <code>"quit"</code> synchronously first, so components can drop state tied to the game: <code>&lt;game-lobby&gt;</code> leaves its room and <code>&lt;game-peer-connection&gt;</code> closes. Equivalent to the <code>--quit</code> command.
+</dd>
+
 <dt><span class="badge method">static define(tag?, registry?)</span></dt>
 <dd>
 Registers the custom element. Call without arguments to register as <code>&lt;game-shell&gt;</code>, or pass a custom tag name and/or a <code>CustomElementRegistry</code>.
@@ -616,9 +622,9 @@ The shell listens for the following events bubbling up from descendant component
 
 <dt><span class="badge event">game-lifecycle</span></dt>
 <dd>
-Fired on every scene transition and at the start of <code>.start()</code> (with action <code>"setup"</code>). The event is a <code>GameLifecycleEvent</code> with <code>.action</code> (the new scene name or <code>"setup"</code>), <code>.state</code> (a plain snapshot object), and <code>.scene</code> (the current scene name).
+Fired on every scene transition, at the start of <code>.start()</code> (with action <code>"setup"</code>) and at the start of <code>.quit()</code> (with action <code>"quit"</code>). The event is a <code>GameLifecycleEvent</code> with <code>.action</code> (the new scene name, <code>"setup"</code> or <code>"quit"</code>), <code>.state</code> (a plain snapshot object), and <code>.scene</code> (the current scene name).
 
-The <code>"setup"</code> action fires synchronously at the start of <code>.start()</code> before stats are wiped and the scene changes to <code>"playing"</code>. Use this to initialise game state (set stats, collections, etc.) on game start/restart.
+The <code>"setup"</code> action fires synchronously at the start of <code>.start()</code> before stats are wiped and the scene changes to <code>"playing"</code>. Use this to initialise game state (set stats, collections, etc.) on game start/restart. The <code>"quit"</code> action fires synchronously at the start of <code>.quit()</code> before the scene changes to <code>"ready"</code>.
 
 ```js
 shell.addEventListener("game-lifecycle", (e) => {

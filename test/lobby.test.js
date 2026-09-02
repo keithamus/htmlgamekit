@@ -615,6 +615,36 @@ describe("GameLobby", () => {
       assert.equal(lastWs, replacement, "no extra reconnect was scheduled");
       assert.notOk(lobby.matches(":state(disconnected)"));
     });
+
+    it("leaves the room when the shell quits", async () => {
+      setup();
+      await tick();
+      await tick();
+      const shell = document.querySelector("game-shell");
+      lastWs.serverSend({ type: "connected", player_id: "p1" });
+      lastWs.serverSend({
+        type: "start_signalling",
+        players: [{ id: "p1" }, { id: "p2" }],
+        code: "ABCD",
+      });
+      const firstWs = lastWs;
+      shell.quit();
+      await tick();
+      assert.notEqual(lastWs, firstWs, "a new WebSocket was opened");
+      assert.equal(shell.scene.get(), "ready");
+    });
+
+    it("keeps the socket when the shell quits outside a room", async () => {
+      setup();
+      await tick();
+      await tick();
+      const shell = document.querySelector("game-shell");
+      lastWs.serverSend({ type: "connected", player_id: "p1" });
+      const firstWs = lastWs;
+      shell.quit();
+      await tick();
+      assert.equal(lastWs, firstWs);
+    });
   });
 
   describe("commands", () => {

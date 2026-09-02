@@ -136,7 +136,7 @@ class NoughtsAndCrosses extends GameComponent {
 
   #onMatchClose(e) {
     // The unreliable channel closing on its own does not end the game.
-    if (e.reason !== "closed" || this.#done) return;
+    if (e.reason === "unreliable-closed" || this.#done) return;
     this.#done = true;
     this.#setStatus("Opponent disconnected.");
     this.#updateButtons();
@@ -241,8 +241,4 @@ shell.addEventListener("game-lobby-error", (e) => {
 
 shell.addEventListener("game-lobby-room", () => {
   error.textContent = "";
-});
-
-document.querySelector("#btn-lobby").addEventListener("click", () => {
-  location.reload();
 });

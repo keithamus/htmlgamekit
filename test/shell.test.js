@@ -269,6 +269,26 @@ describe("GameShell", () => {
       assert.equal(shell.scene.get(), "playing");
       assert.equal(shell.round.get(), 2);
     });
+
+    it("--quit fires the 'quit' lifecycle then returns to ready", async () => {
+      const shell = await createShell('rounds="5" between-delay="9999"');
+      shell.start();
+      await settle();
+      shell.dispatchEvent(new GameRoundPassEvent(10));
+      assert.equal(shell.scene.get(), "between");
+
+      const actions = [];
+      shell.addEventListener("game-lifecycle", (e) => actions.push(e.action));
+      const evt = new Event("command");
+      evt.command = "--quit";
+      shell.dispatchEvent(evt);
+      assert.equal(shell.scene.get(), "ready");
+      assert.deepEqual(actions, ["quit"], "quit fires synchronously");
+
+      await settle();
+      assert.deepEqual(actions, ["quit", "ready"]);
+      assert.equal(shell.scene.get(), "ready", "between timer was cleared");
+    });
   });
 
   describe("lifecycle events", () => {

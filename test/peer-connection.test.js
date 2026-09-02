@@ -6,6 +6,7 @@ import {
   GamePeerConnectionOpenEvent,
   GamePeerConnectionCloseEvent,
   GamePeerConnectionMessageEvent,
+  GameLobbyPlayerEvent,
 } from "../src/events.js";
 import { Signal } from "../src/signals.js";
 
@@ -570,6 +571,65 @@ describe("GamePeerConnection", () => {
     lastPc.channels[1].open();
     match.close();
     assert.ok(match.matches(":state(idle)"));
+  });
+
+  it("drops the connection with reason 'left' when the peer leaves the room", async () => {
+    const ctx = makeLobbyContext();
+    const { shell, match } = await setup(ctx);
+    ctx.playerId.set("player-a");
+    shell.start();
+    await tick();
+    ctx.startSignalling.set({
+      players: [{ id: "player-a" }, { id: "player-b" }],
+      code: null,
+    });
+    await tick();
+    await tick();
+    await tick();
+    lastPc.channels[0].open();
+    lastPc.channels[1].open();
+    match.ready();
+
+    const events = [];
+    match.addEventListener("game-peer-connection-close", (e) => events.push(e));
+    shell.dispatchEvent(new GameLobbyPlayerEvent("left", { id: "player-c" }));
+    assert.equal(events.length, 0, "ignores other players");
+    shell.dispatchEvent(new GameLobbyPlayerEvent("left", { id: "player-b" }));
+    assert.equal(events.length, 1);
+    assert.equal(events[0].peerId, "player-b");
+    assert.equal(events[0].reason, "left");
+    assert.ok(match.matches(":state(disconnected)"));
+    assert.notOk(match.matches(":state(ready)"));
+    assert.equal(match.peerId, null);
+    assert.equal(lastPc.connectionState, "closed");
+    await tick();
+    assert.equal(events.length, 1, "closing our own channels fires nothing");
+  });
+
+  it("closes when the shell quits", async () => {
+    const ctx = makeLobbyContext();
+    const { shell, match } = await setup(ctx);
+    ctx.playerId.set("player-a");
+    shell.start();
+    await tick();
+    ctx.startSignalling.set({
+      players: [{ id: "player-a" }, { id: "player-b" }],
+      code: null,
+    });
+    await tick();
+    await tick();
+    await tick();
+    lastPc.channels[0].open();
+    lastPc.channels[1].open();
+
+    const events = [];
+    match.addEventListener("game-peer-connection-close", (e) => events.push(e));
+    shell.quit();
+    await tick();
+    assert.equal(shell.scene.get(), "ready");
+    assert.ok(match.matches(":state(idle)"));
+    assert.equal(lastPc.connectionState, "closed");
+    assert.equal(events.length, 0);
   });
 
   it("peerId getter returns remote player ID after signalling", async () => {

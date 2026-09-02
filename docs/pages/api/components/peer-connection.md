@@ -108,8 +108,11 @@ Calls are no-ops if the relevant channel is not open.
 
 <dt><span class="badge method">.close()</span></dt>
 <dd>
-Close the peer connection and reset to idle. The match can reconnect if
-the lobby starts a new signalling session.
+Close the peer connection and reset to idle. Fires no
+<code>game-peer-connection-close</code> event; the peer finds out through its
+own DataChannels closing. The match can reconnect if the lobby starts a new
+signalling session. Called automatically when the shell quits
+(<code>shell.quit()</code> / <code>--quit</code>).
 </dd>
 
 <dt><span class="badge method">.ready()</span></dt>
@@ -169,12 +172,17 @@ shell.addEventListener("game-peer-connection-open", (e) => {
 
 <dt><span class="badge event">game-peer-connection-close</span></dt>
 <dd>
-Fires when a DataChannel closes (graceful or ungraceful disconnect).
+Fires when the connection is lost: the reliable DataChannel closed, or the
+lobby reported that the peer left the room (the signalling server notices a
+closed tab straight away, long before ICE times out). Either way the element
+tears the connection down, moves to <code>:state(disconnected)</code> and
+drops any pending readiness. The unreliable channel closing on its own only
+fires the event.
 
-| Property | Type     | Description                                            |
-| -------- | -------- | ------------------------------------------------------ |
-| `peerId` | `string` | Remote player's ID                                     |
-| `reason` | `string` | `"closed"` (reliable channel) or `"unreliable-closed"` |
+| Property | Type     | Description                                                                           |
+| -------- | -------- | ------------------------------------------------------------------------------------- |
+| `peerId` | `string` | Remote player's ID                                                                    |
+| `reason` | `string` | `"closed"` (reliable channel), `"left"` (peer left the room) or `"unreliable-closed"` |
 
 </dd>
 
@@ -223,7 +231,7 @@ All events bubble and compose.
 | `:state(signalling)`   | Exchanging SDP and ICE candidates |
 | `:state(connecting)`   | ICE negotiation in progress       |
 | `:state(connected)`    | Both DataChannels open            |
-| `:state(disconnected)` | Connection lost                   |
+| `:state(disconnected)` | Connection lost or peer left      |
 | `:state(ready)`        | This player is ready, peer is not |
 
 `:state(ready)` makes a rematch prompt purely declarative — the element sits
@@ -285,9 +293,9 @@ function makeMove(cell) {
 }
 
 // Handle disconnect. The unreliable channel can close on its own, so only
-// "closed" means the game is over.
+// "closed" and "left" mean the game is over.
 shell.addEventListener("game-peer-connection-close", (e) => {
-  if (e.reason === "closed") returnToLobby();
+  if (e.reason !== "unreliable-closed") returnToLobby();
 });
 ```
 

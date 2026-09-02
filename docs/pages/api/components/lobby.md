@@ -79,7 +79,10 @@ server, so a queue overlay selected with
 Leave the current private room. The signalling protocol has no leave
 message, so this closes the WebSocket and reconnects with a fresh player
 identity — the server sees the player leave, and the room code and player
-count stats are cleared.
+count stats are cleared. Called automatically when the shell quits
+(<code>shell.quit()</code> / <code>--quit</code>) while in a room or match,
+so the other player receives <code>game-lobby-player</code> with action
+<code>"left"</code>.
 </dd>
 
 <dt><span class="badge method">.createRoom()</span></dt>

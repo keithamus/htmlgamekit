@@ -21,7 +21,7 @@ const LATENCY_INTERVAL = 2000;
  *
  * @summary WebRTC DataChannel peer connection component
  * @fires {GamePeerConnectionOpenEvent} game-peer-connection-open - Both DataChannels open and ready
- * @fires {GamePeerConnectionCloseEvent} game-peer-connection-close - DataChannel closed
+ * @fires {GamePeerConnectionCloseEvent} game-peer-connection-close - DataChannel closed or the peer left the room
  * @fires {GamePeerConnectionMessageEvent} game-peer-connection-message - Message received from peer
  * @fires {GamePeerConnectionIceEvent} game-peer-connection-ice - ICE connection state changed
  * @cssState idle - No connection in progress
@@ -48,6 +48,7 @@ export default class GamePeerConnection extends GameComponent {
 
   #states = null;
   #pc = null;
+  #connAbort = null;
   #reliableChannel = null;
   #unreliableChannel = null;
   #lobby = null;
@@ -110,6 +111,15 @@ export default class GamePeerConnection extends GameComponent {
       "game-lifecycle",
       (e) => {
         if (e.action === "setup") this.#republishStats();
+        else if (e.action === "quit") this.close();
+      },
+      { signal: this.signal },
+    );
+    this.shell?.addEventListener(
+      "game-lobby-player",
+      (e) => {
+        if (e.action === "left" && e.player.id === this.#peerId)
+          this.#lost("left");
       },
       { signal: this.signal },
     );
@@ -150,7 +160,9 @@ export default class GamePeerConnection extends GameComponent {
   }
 
   /**
-   * Close the peer connection.
+   * Close the peer connection and reset to idle. Fires no
+   * `game-peer-connection-close` event; the peer is told by its own
+   * DataChannels closing.
    */
   close() {
     this.#teardown();
@@ -172,7 +184,7 @@ export default class GamePeerConnection extends GameComponent {
     effect(
       () => {
         const payload = lobby.startSignalling.get();
-        if (payload && !this.#pc) {
+        if (payload && !this.#connAbort) {
           this.#startWebRTC(payload, lobby);
         }
       },
@@ -181,7 +193,7 @@ export default class GamePeerConnection extends GameComponent {
   }
 
   async #startWebRTC(payload, lobby) {
-    if (this.#pc) return;
+    if (this.#connAbort) return;
     this.#setState("signalling");
 
     const myId = lobby.playerId.get();
@@ -191,6 +203,9 @@ export default class GamePeerConnection extends GameComponent {
 
     this.#peerId = peerId;
     this.#stat("peer-id", peerId);
+    const abort = new AbortController();
+    this.#connAbort = abort;
+    const { signal } = abort;
 
     // Request ICE servers first
     lobby.requestIceServers();
@@ -208,6 +223,7 @@ export default class GamePeerConnection extends GameComponent {
       }, 3000);
     });
 
+    if (signal.aborted) return;
     const pc = new RTCPeerConnection({ iceServers });
     this.#pc = pc;
 
@@ -233,7 +249,7 @@ export default class GamePeerConnection extends GameComponent {
       }
     };
     lobby.onSdp(onSdp);
-    this.signal.addEventListener("abort", () => lobby.offSdp(onSdp), {
+    signal.addEventListener("abort", () => lobby.offSdp(onSdp), {
       once: true,
     });
 
@@ -255,28 +271,36 @@ export default class GamePeerConnection extends GameComponent {
       }
     };
     lobby.onIceCandidate(onIce);
-    this.signal.addEventListener("abort", () => lobby.offIceCandidate(onIce), {
+    signal.addEventListener("abort", () => lobby.offIceCandidate(onIce), {
       once: true,
     });
 
     // ICE candidate gathering
-    pc.addEventListener("icecandidate", (e) => {
-      if (e.candidate) {
-        lobby.relayIce(peerId, JSON.stringify(e.candidate.toJSON()));
-      }
-    });
+    pc.addEventListener(
+      "icecandidate",
+      (e) => {
+        if (e.candidate) {
+          lobby.relayIce(peerId, JSON.stringify(e.candidate.toJSON()));
+        }
+      },
+      { signal },
+    );
 
-    pc.addEventListener("iceconnectionstatechange", () => {
-      const state = pc.iceConnectionState;
-      if (state === "connected" || state === "completed") {
-        this.#setState("connected");
-      } else if (state === "failed" || state === "closed") {
-        this.#setState("disconnected");
-        this.dispatchEvent(new GamePeerConnectionIceEvent(state));
-      } else {
-        this.dispatchEvent(new GamePeerConnectionIceEvent(state));
-      }
-    });
+    pc.addEventListener(
+      "iceconnectionstatechange",
+      () => {
+        const state = pc.iceConnectionState;
+        if (state === "connected" || state === "completed") {
+          this.#setState("connected");
+        } else if (state === "failed" || state === "closed") {
+          this.#setState("disconnected");
+          this.dispatchEvent(new GamePeerConnectionIceEvent(state));
+        } else {
+          this.dispatchEvent(new GamePeerConnectionIceEvent(state));
+        }
+      },
+      { signal },
+    );
 
     if (isOfferer) {
       // Offerer creates both DataChannels
@@ -287,61 +311,75 @@ export default class GamePeerConnection extends GameComponent {
         ordered: false,
         maxRetransmits: this.maxRetransmits,
       });
-      this.#setupChannel(reliable, "reliable");
-      this.#setupChannel(unreliable, "unreliable");
+      this.#setupChannel(reliable, "reliable", signal);
+      this.#setupChannel(unreliable, "unreliable", signal);
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       lobby.relaySdp(peerId, offer.sdp, "offer");
     } else {
       // Answerer receives DataChannels via ondatachannel
-      pc.addEventListener("datachannel", (e) => {
-        const ch = e.channel;
-        const role =
-          ch.label === this.unreliableLabel ? "unreliable" : "reliable";
-        this.#setupChannel(ch, role);
-      });
+      pc.addEventListener(
+        "datachannel",
+        (e) => {
+          const ch = e.channel;
+          const role =
+            ch.label === this.unreliableLabel ? "unreliable" : "reliable";
+          this.#setupChannel(ch, role, signal);
+        },
+        { signal },
+      );
     }
   }
 
-  #setupChannel(channel, role) {
+  #setupChannel(channel, role, signal) {
     if (role === "reliable") {
       this.#reliableChannel = channel;
     } else {
       this.#unreliableChannel = channel;
     }
 
-    channel.addEventListener("open", () => this.#announceOpen());
+    channel.addEventListener("open", () => this.#announceOpen(), { signal });
     if (channel.readyState === "open") this.#announceOpen();
 
-    channel.addEventListener("close", () => {
-      this.#opened = false;
-      this.#setState("disconnected");
-      this.#stopLatencyPolling();
-      const reason =
-        channel.label === this.reliableLabel ? "closed" : "unreliable-closed";
-      this.dispatchEvent(
-        new GamePeerConnectionCloseEvent(this.#peerId, reason),
-      );
-    });
+    channel.addEventListener(
+      "close",
+      () => {
+        if (role === "reliable") {
+          this.#lost("closed");
+          return;
+        }
+        this.#opened = false;
+        this.#setState("disconnected");
+        this.#stopLatencyPolling();
+        this.dispatchEvent(
+          new GamePeerConnectionCloseEvent(this.#peerId, "unreliable-closed"),
+        );
+      },
+      { signal },
+    );
 
-    channel.addEventListener("message", (e) => {
-      let data = e.data;
-      try {
-        data = JSON.parse(data);
-      } catch {
-        /* raw string */
-      }
-      // Internal ready handshake — not exposed as a message event
-      if (data && typeof data === "object" && data.__ready) {
-        this.#remoteReady = true;
-        this.#checkBothReady();
-        return;
-      }
-      this.dispatchEvent(
-        new GamePeerConnectionMessageEvent(this.#peerId, role, data),
-      );
-    });
+    channel.addEventListener(
+      "message",
+      (e) => {
+        let data = e.data;
+        try {
+          data = JSON.parse(data);
+        } catch {
+          /* raw string */
+        }
+        // Internal ready handshake — not exposed as a message event
+        if (data && typeof data === "object" && data.__ready) {
+          this.#remoteReady = true;
+          this.#checkBothReady();
+          return;
+        }
+        this.dispatchEvent(
+          new GamePeerConnectionMessageEvent(this.#peerId, role, data),
+        );
+      },
+      { signal },
+    );
   }
 
   #announceOpen() {
@@ -384,8 +422,17 @@ export default class GamePeerConnection extends GameComponent {
     this.#latencyTimer = null;
   }
 
+  #lost(reason) {
+    const peerId = this.#peerId;
+    this.#teardown();
+    this.#setState("disconnected");
+    this.dispatchEvent(new GamePeerConnectionCloseEvent(peerId, reason));
+  }
+
   #teardown() {
     this.#stopLatencyPolling();
+    this.#connAbort?.abort();
+    this.#connAbort = null;
     if (this.#reliableChannel) {
       this.#reliableChannel.close();
       this.#reliableChannel = null;
@@ -404,7 +451,6 @@ export default class GamePeerConnection extends GameComponent {
     this.#localReady = false;
     this.#remoteReady = false;
     this.#opened = false;
-    this.#watching = false;
     this.#states.delete("ready");
     this.#setState("idle");
     this.#stat("peer-id", "");

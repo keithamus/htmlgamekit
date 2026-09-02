@@ -383,11 +383,13 @@ update their local board with the same index, so the state stays in sync
 without any reconciliation.
 
 A closing DataChannel is not always the end of the game — the unreliable
-channel can go on its own — so check the reason:
+channel can go on its own — so check the reason. `"closed"` means the
+reliable channel went; `"left"` means the lobby reported the peer leaving
+the room, which the signalling server notices the moment their tab closes:
 
 ```js
 #onMatchClose(e) {
-  if (e.reason !== "closed" || this.#done) return;
+  if (e.reason === "unreliable-closed" || this.#done) return;
   this.#done = true;
   this.#setStatus("Opponent disconnected.");
   this.#updateButtons();
@@ -467,6 +469,7 @@ shell restarts:
     Play again
   </button>
   <p data-rematch-wait>Waiting for your opponent to accept...</p>
+  <button commandfor="game" command="--quit">Find a new game</button>
 </div>
 ```
 
@@ -478,6 +481,21 @@ game-peer-connection:state(ready) ~ [data-overlay] [data-rematch],
 game-peer-connection:not(:state(ready)) ~ [data-overlay] [data-rematch-wait] {
   display: none;
 }
+```
+
+A player who would rather not wait presses `--quit`. The shell fires the
+`"quit"` lifecycle, on which the match closes its connection and the lobby
+leaves the room, then returns to the `ready` scene: the main menu is back and
+the queue or a fresh room code is one click away. On the other side, the
+match reports `game-peer-connection-close` and moves to
+`:state(disconnected)`, so one more overlay covers both a quitter and a
+closed tab:
+
+```html
+<div when-eq-peer-state="disconnected" data-overlay>
+  <h1>Opponent disconnected</h1>
+  <button commandfor="game" command="--quit">Back to the lobby</button>
+</div>
 ```
 
 ## Step 11: Register the Element
