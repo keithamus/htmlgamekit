@@ -30,6 +30,8 @@ export class GameTrophyUnlockEvent extends Event {
  * @cssState show-tip - Tooltip is temporarily shown after a click
  */
 export default class GameTrophy extends GameComponent {
+  static ownsConditions = true;
+
   static attrs = {
     name: { type: "string" },
     icon: { type: "string" },

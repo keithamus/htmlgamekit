@@ -1,6 +1,7 @@
 /* htmlgamekit base -- reset, custom properties, and light-DOM
-   content styles. Scene visibility is handled by game-shell
-   via manual slot assignment (no CSS display toggling). */
+   content styles. Scene visibility for the shell's own children is
+   handled by game-shell via manual slot assignment (no CSS display
+   toggling); nested conditional elements use the hidden attribute. */
 
 game-shell:not(:defined) {
   display: none;
@@ -8,6 +9,12 @@ game-shell:not(:defined) {
 
 game-shell :not(:defined) {
   visibility: hidden;
+}
+
+/* Nested when-* elements are hidden by attribute, so it has to win over
+   the display rules below (and any the game adds). */
+game-shell [hidden] {
+  display: none !important;
 }
 
 :root {
@@ -207,10 +214,6 @@ game-quiz fieldset {
   width: 100%;
   max-width: 540px;
   margin: 0 auto;
-}
-
-game-quiz fieldset[hidden] {
-  display: none;
 }
 
 game-quiz legend {

@@ -24,6 +24,8 @@ import { GameCollectionAddEvent } from "./events.js";
  * @fires {GameCollectionAddEvent} game-collection-add - Fires when the passage is visited for the first time
  */
 export default class GamePassage extends GameComponent {
+  static ownsConditions = true;
+
   static attrs = {
     collection: { type: "string", default: "visited" },
   };

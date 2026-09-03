@@ -111,6 +111,13 @@ export function initAttrs(Ctor) {
  * @summary Base class for game components
  */
 export default class GameComponent extends HTMLElement {
+  /**
+   * Set to true when the component reads its own `when-*` attributes for
+   * something other than visibility, such as a trigger filter or an unlock
+   * condition. The shell then leaves the element and its subtree alone.
+   */
+  static ownsConditions = false;
+
   #abort;
   #shell = null;
   #prevState = "init";

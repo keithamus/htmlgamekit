@@ -204,6 +204,55 @@ Multiple conditions on one element use AND logic -- all must pass:
 </game-toast>
 ```
 
+## Where Conditions Apply
+
+Conditions work at any depth inside `<game-shell>`, but the shell enforces
+them two different ways.
+
+A **direct child** of the shell is shown by
+[manual slot assignment]({{ site.baseurl }}/api/scenes/): when its conditions
+fail it is not assigned to the slot, so it is not rendered at all.
+
+A **nested element** is shown and hidden with the `hidden` attribute, because
+it lives inside a child that the shell has already slotted. This lets one
+overlay carry several variants of its own content instead of being split into
+near-duplicate top-level overlays:
+
+```html
+<div when-some-scene="intro" when-eq-lobby-state="in-room" data-overlay>
+  <h1>Room <game-signal key="room-code"></game-signal></h1>
+  <p when-max-player-count="0">Send that code to the other player.</p>
+  <p when-min-player-count="1">Both players are here.</p>
+  <button commandfor="game" command="--peer-ready">Ready</button>
+</div>
+```
+
+`game-base.css` makes `hidden` win over the display rules inside a shell, so a
+hidden element stays hidden even when a selector such as `[data-overlay]` sets
+`display`. Elements without any `when-*` attribute are never touched, so your
+own `hidden` usage is left alone.
+
+### Opting Out
+
+Some components read their own `when-*` attributes as something other than a
+visibility rule -- `<game-trophy>` treats them as an unlock condition, and
+`<game-sample>` and `<game-toast>` treat them as a trigger filter. Those
+components set `static ownsConditions = true`, and the shell then skips both
+the element and everything inside it. `<option>` elements are always skipped,
+since they are data for their parent component.
+
+Set the same flag on your own component when its conditions are not about
+visibility:
+
+```js
+class MyThing extends GameComponent {
+  static ownsConditions = true;
+}
+```
+
+Declare the class before the shell upgrades, since the shell reads the flag
+from the element registry.
+
 ## Programmatic Usage
 
 ```js

@@ -77,6 +77,53 @@ function hasInSet(key, id, shell) {
   return shell.hasInCollection?.(key, id) ?? false;
 }
 
+/**
+ * True when an element reads its own `when-*` attributes for something other
+ * than visibility, so nothing else may act on them. `<option>` elements are
+ * always data, and a component opts in with `static ownsConditions = true`.
+ *
+ * Ownership is read from the registry rather than the instance, because an
+ * element nested in the shell may not have upgraded yet the first time the
+ * shell evaluates it. A component that owns its conditions must therefore be
+ * defined before the shell upgrades.
+ */
+function ownsConditions(el) {
+  if (el.localName === "option") return true;
+  const ctor = customElements.get(el.localName) ?? el.constructor;
+  return ctor.ownsConditions === true;
+}
+
+function hasConditions(el) {
+  for (const attr of el.attributes) {
+    if (attr.name.startsWith("when-")) return true;
+  }
+  return false;
+}
+
+function* walk(el) {
+  for (const child of el.children) {
+    if (ownsConditions(child)) continue;
+    if (hasConditions(child)) yield child;
+    yield* walk(child);
+  }
+}
+
+/**
+ * Every conditional element below `root`'s own children. The shell assigns
+ * its direct children to a slot, so those are excluded here; this covers the
+ * elements nested inside them, which are shown and hidden instead.
+ *
+ * Elements that consume their own conditions are skipped along with their
+ * subtrees, so a trophy's unlock condition or a sample's trigger filter is
+ * never mistaken for a visibility rule.
+ */
+export function* conditionalDescendants(root) {
+  for (const child of root.children) {
+    if (ownsConditions(child)) continue;
+    yield* walk(child);
+  }
+}
+
 export function matchesConditions(el, shell) {
   for (const attr of el.attributes) {
     if (!attr.name.startsWith("when-")) continue;

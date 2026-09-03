@@ -51,6 +51,8 @@ const PERSIST_VISIBLE = {
  * @cssprop [--game-toast-bg=rgba(0, 0, 0, 0.6)] - Background color for bottom/top/inline persistent toasts
  */
 export default class GameToast extends GameComponent {
+  static ownsConditions = true;
+
   static attrs = {
     trigger: { type: "string" },
     persist: { type: "boolean" },

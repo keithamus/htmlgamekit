@@ -53,6 +53,8 @@ function vibrateFromScale(noteCount, spacingMs) {
  * @summary Individual sound/vibration sample definition
  */
 export class GameSample extends GameComponent {
+  static ownsConditions = true;
+
   static attrs = {
     name: { type: "string" },
     trigger: { type: "string" },

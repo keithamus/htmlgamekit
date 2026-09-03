@@ -7,7 +7,7 @@ import FixedProgression from "./progressions/fixed.js";
 import StaircaseProgression from "./progressions/staircase.js";
 import TierProgression from "./progressions/tier.js";
 import { initAttrs, camelCase } from "./component.js";
-import { matchesConditions } from "./conditions.js";
+import { matchesConditions, conditionalDescendants } from "./conditions.js";
 import { setMasterVolume } from "./synth.js";
 
 function toBase64Url(buf) {
@@ -570,6 +570,12 @@ export default class GameShell extends HTMLElement {
           }
         }
       });
+    });
+
+    this.#effect(() => {
+      for (const el of conditionalDescendants(this)) {
+        el.hidden = !matchesConditions(el, this);
+      }
     });
 
     this.#effect(() => {
