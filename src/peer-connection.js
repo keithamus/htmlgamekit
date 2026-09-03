@@ -21,9 +21,9 @@ const LATENCY_INTERVAL = 2000;
  *
  * @summary WebRTC DataChannel peer connection component
  * @fires {GamePeerConnectionOpenEvent} game-peer-connection-open - Both DataChannels open and ready
- * @fires {GamePeerConnectionCloseEvent} game-peer-connection-close - DataChannel closed or the peer left the room
+ * @fires {GamePeerConnectionCloseEvent} game-peer-connection-close - DataChannel closed, the peer left the room, or the handshake timed out
  * @fires {GamePeerConnectionMessageEvent} game-peer-connection-message - Message received from peer
- * @fires {GamePeerConnectionIceEvent} game-peer-connection-ice - ICE connection state changed
+ * @fires {GamePeerConnectionIceEvent} game-peer-connection-ice - ICE connection state changed, or "no-servers" when the lobby never returned STUN/TURN configuration
  * @cssState idle - No connection in progress
  * @cssState signalling - Exchanging SDP and ICE
  * @cssState connecting - ICE connecting
@@ -31,6 +31,9 @@ const LATENCY_INTERVAL = 2000;
  * @cssState disconnected - Connection lost
  * @cssState ready - Local player signalled readiness, waiting for the peer
  * @attr {boolean} [auto-ready] - Automatically call ready() when both channels open; fires game-start-request once peer also ready
+ * @attr {number} [ice-timeout=2000] - Milliseconds to wait for each ICE server reply from the lobby
+ * @attr {number} [ice-attempts=3] - How many times to ask the lobby for ICE servers before giving up
+ * @attr {number} [connect-timeout=20000] - Milliseconds before an incomplete handshake is abandoned; 0 waits for ever
  */
 export default class GamePeerConnection extends GameComponent {
   static template = null;
@@ -40,6 +43,9 @@ export default class GamePeerConnection extends GameComponent {
     "unreliable-label": { type: "string", default: "unreliable" },
     "max-retransmits": { type: "long", default: 0 },
     "auto-ready": { type: "boolean" },
+    "ice-timeout": { type: "long", default: 2000 },
+    "ice-attempts": { type: "long", default: 3 },
+    "connect-timeout": { type: "long", default: 20000 },
   };
 
   static define(tag = "game-peer-connection", registry = customElements) {
@@ -53,6 +59,7 @@ export default class GamePeerConnection extends GameComponent {
   #unreliableChannel = null;
   #lobby = null;
   #latencyTimer = null;
+  #connectTimer = null;
   #pendingCandidates = [];
   #watching = false;
   #peerId = null;
@@ -192,6 +199,62 @@ export default class GamePeerConnection extends GameComponent {
     );
   }
 
+  /**
+   * Ask the lobby for STUN and TURN configuration, retrying up to
+   * `ice-attempts` times with an `ice-timeout` deadline on each attempt.
+   *
+   * A single slow or dropped reply used to leave the connection with no ICE
+   * servers at all, which then only works between peers that can reach each
+   * other directly. Attempts are bounded because the signalling server rate
+   * limits these requests per connection.
+   *
+   * Resolves to `[]` once the attempts are spent, so the handshake still gets
+   * its best shot at a host-candidate connection.
+   */
+  async #fetchIceServers(lobby, signal) {
+    const attempts = Math.max(1, this.iceAttempts);
+    for (let i = 0; i < attempts; i++) {
+      const servers = await this.#requestIceServers(lobby, signal);
+      if (signal.aborted) return [];
+      if (servers?.length) return servers;
+    }
+    return [];
+  }
+
+  #requestIceServers(lobby, signal) {
+    return new Promise((resolve) => {
+      let timer = 0;
+      let settled = false;
+      const finish = (servers) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        lobby.offIceServers(finish);
+        resolve(servers);
+      };
+      // Registered before the request goes out, so a fast reply cannot be
+      // missed.
+      lobby.onIceServers(finish);
+      signal.addEventListener("abort", () => finish([]), { once: true });
+      timer = setTimeout(() => finish([]), this.iceTimeout);
+      lobby.requestIceServers();
+    });
+  }
+
+  /**
+   * Give up on a handshake that never completes. Without this the element
+   * sits in `signalling` for ever and the game has nothing to show the
+   * player. Set `connect-timeout="0"` to wait indefinitely.
+   */
+  #armConnectTimeout() {
+    clearTimeout(this.#connectTimer);
+    if (!this.connectTimeout) return;
+    this.#connectTimer = setTimeout(() => {
+      if (this.connected) return;
+      this.#lost("timeout");
+    }, this.connectTimeout);
+  }
+
   async #startWebRTC(payload, lobby) {
     if (this.#connAbort) return;
     this.#setState("signalling");
@@ -207,23 +270,16 @@ export default class GamePeerConnection extends GameComponent {
     this.#connAbort = abort;
     const { signal } = abort;
 
-    // Request ICE servers first
-    lobby.requestIceServers();
+    this.#armConnectTimeout();
 
-    const iceServers = await new Promise((resolve) => {
-      const onServers = (servers) => {
-        lobby.offIceServers(onServers);
-        resolve(servers);
-      };
-      lobby.onIceServers(onServers);
-      // Fallback: proceed with no STUN after 3s
-      setTimeout(() => {
-        lobby.offIceServers(onServers);
-        resolve([]);
-      }, 3000);
-    });
-
+    const iceServers = await this.#fetchIceServers(lobby, signal);
     if (signal.aborted) return;
+
+    this.#stat("ice-servers", iceServers.length);
+    if (!iceServers.length) {
+      this.dispatchEvent(new GamePeerConnectionIceEvent("no-servers"));
+    }
+
     const pc = new RTCPeerConnection({ iceServers });
     this.#pc = pc;
 
@@ -263,9 +319,7 @@ export default class GamePeerConnection extends GameComponent {
         return;
       }
       if (pc.remoteDescription) {
-        await pc
-          .addIceCandidate(parsed)
-          .catch((e) => console.warn("[pc] addIceCandidate failed", e));
+        await pc.addIceCandidate(parsed).catch(() => {});
       } else {
         this.#pendingCandidates.push(parsed);
       }
@@ -385,6 +439,8 @@ export default class GamePeerConnection extends GameComponent {
   #announceOpen() {
     if (this.#opened || !this.connected) return;
     this.#opened = true;
+    clearTimeout(this.#connectTimer);
+    this.#connectTimer = null;
     this.#setState("connected");
     this.dispatchEvent(new GamePeerConnectionOpenEvent(this.#peerId));
     this.#startLatencyPolling();
@@ -431,6 +487,8 @@ export default class GamePeerConnection extends GameComponent {
 
   #teardown() {
     this.#stopLatencyPolling();
+    clearTimeout(this.#connectTimer);
+    this.#connectTimer = null;
     this.#connAbort?.abort();
     this.#connAbort = null;
     if (this.#reliableChannel) {

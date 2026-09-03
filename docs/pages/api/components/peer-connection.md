@@ -172,17 +172,18 @@ shell.addEventListener("game-peer-connection-open", (e) => {
 
 <dt><span class="badge event">game-peer-connection-close</span></dt>
 <dd>
-Fires when the connection is lost: the reliable DataChannel closed, or the
+Fires when the connection is lost: the reliable DataChannel closed, the
 lobby reported that the peer left the room (the signalling server notices a
-closed tab straight away, long before ICE times out). Either way the element
+closed tab straight away, long before ICE times out), or the handshake never
+completed within <code>connect-timeout</code>. Either way the element
 tears the connection down, moves to <code>:state(disconnected)</code> and
 drops any pending readiness. The unreliable channel closing on its own only
 fires the event.
 
-| Property | Type     | Description                                                                           |
-| -------- | -------- | ------------------------------------------------------------------------------------- |
-| `peerId` | `string` | Remote player's ID                                                                    |
-| `reason` | `string` | `"closed"` (reliable channel), `"left"` (peer left the room) or `"unreliable-closed"` |
+| Property | Type     | Description                                                                                              |
+| -------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| `peerId` | `string` | Remote player's ID                                                                                       |
+| `reason` | `string` | `"closed"` (reliable channel), `"left"` (peer left the room), `"timeout"` (handshake never completed) or `"unreliable-closed"` |
 
 </dd>
 
@@ -209,13 +210,15 @@ shell.addEventListener("game-peer-connection-message", (e) => {
 
 <dt><span class="badge event">game-peer-connection-ice</span></dt>
 <dd>
-Fires on ICE connection state changes. Informational — you rarely need to
-handle this directly; use <code>game-peer-connection-open</code> and
-<code>game-peer-connection-close</code> for connection lifecycle.
+Fires on ICE connection state changes, and once with the synthetic state
+<code>"no-servers"</code> when the lobby never returned STUN/TURN
+configuration. That case still attempts the connection, but it can only
+succeed between peers that reach each other directly, so it is worth
+surfacing in the UI.
 
-| Property | Type     | Description                 |
-| -------- | -------- | --------------------------- |
-| `state`  | `string` | ICE connection state string |
+| Property | Type     | Description                                       |
+| -------- | -------- | ------------------------------------------------- |
+| `state`  | `string` | ICE connection state string, or `"no-servers"`    |
 
 </dd>
 
@@ -246,11 +249,12 @@ game-peer-connection:not(:state(ready)) ~ [data-overlay] [data-rematch-wait] {
 
 ### Shell Stats
 
-| Stat         | Type           | Description           |
-| ------------ | -------------- | --------------------- |
-| `peer-state` | `string`       | Current state name    |
-| `latency`    | `number\|null` | Round-trip time in ms |
-| `peer-id`    | `string`       | Remote player's ID    |
+| Stat          | Type           | Description                           |
+| ------------- | -------------- | ------------------------------------- |
+| `peer-state`  | `string`       | Current state name                    |
+| `latency`     | `number\|null` | Round-trip time in ms                 |
+| `peer-id`     | `string`       | Remote player's ID                    |
+| `ice-servers` | `number`       | How many ICE servers the lobby gave   |
 
 `game-shell.start()` clears stats, so the element republishes these on the
 `"setup"` lifecycle event. A latency readout keeps working across rounds and
