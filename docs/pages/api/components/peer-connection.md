@@ -47,6 +47,23 @@ both DataChannels open. Once the peer is ready too the element fires
 when the players should confirm before the first game starts.
 </dd>
 
+<dt><span class="badge attr">heartbeat-interval</span></dt>
+<dd>
+<code>number</code> — Milliseconds between heartbeats sent to the peer over
+the reliable channel, and how often <code>.latency</code> is sampled. Defaults
+to <code>2000</code>.
+</dd>
+
+<dt><span class="badge attr">heartbeat-timeout</span></dt>
+<dd>
+<code>number</code> — Milliseconds of silence from the peer (no heartbeat and
+no game message) before the connection is reported lost with reason
+<code>"lost"</code>. Defaults to <code>10000</code>. Set to <code>0</code> to
+wait for ever. A killed tab or a dropped network never closes its
+DataChannels, and ICE can take half a minute to notice, so this is what tells
+a turn-based game its opponent is gone.
+</dd>
+
 </dl>
 
 ### Instance Properties
@@ -73,8 +90,8 @@ server (reads from the sibling <code>&lt;game-lobby&gt;</code>).
 <dt><span class="badge prop">.latency</span></dt>
 <dd>
 <code>number | null</code> — Last measured round-trip time in milliseconds,
-polled every 2 seconds. <code>null</code> if not connected or stats
-unavailable.
+polled every <code>heartbeat-interval</code>. <code>null</code> if not
+connected or stats unavailable.
 </dd>
 
 </dl>
@@ -174,16 +191,17 @@ shell.addEventListener("game-peer-connection-open", (e) => {
 <dd>
 Fires when the connection is lost: the reliable DataChannel closed, the
 lobby reported that the peer left the room (the signalling server notices a
-closed tab straight away, long before ICE times out), or the handshake never
-completed within <code>connect-timeout</code>. Either way the element
-tears the connection down, moves to <code>:state(disconnected)</code> and
-drops any pending readiness. The unreliable channel closing on its own only
-fires the event.
+closed tab straight away, long before ICE times out), the handshake never
+completed within <code>connect-timeout</code>, or nothing arrived from the
+peer for <code>heartbeat-timeout</code>. Either way the element tears the
+connection down, moves to <code>:state(disconnected)</code> and drops any
+pending readiness. The unreliable channel closing on its own only fires the
+event.
 
 | Property | Type     | Description                                                                                              |
 | -------- | -------- | -------------------------------------------------------------------------------------------------------- |
 | `peerId` | `string` | Remote player's ID                                                                                       |
-| `reason` | `string` | `"closed"` (reliable channel), `"left"` (peer left the room), `"timeout"` (handshake never completed) or `"unreliable-closed"` |
+| `reason` | `string` | `"closed"` (reliable channel), `"left"` (peer left the room), `"timeout"` (handshake never completed), `"lost"` (peer stopped answering heartbeats) or `"unreliable-closed"` |
 
 </dd>
 

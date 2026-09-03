@@ -10,7 +10,7 @@ import {
 } from "./events.js";
 import { effect } from "./signals.js";
 
-const LATENCY_INTERVAL = 2000;
+const PING = JSON.stringify({ __ping: true });
 
 /**
  * Manages a WebRTC peer connection with two DataChannels (reliable + unreliable),
@@ -21,7 +21,7 @@ const LATENCY_INTERVAL = 2000;
  *
  * @summary WebRTC DataChannel peer connection component
  * @fires {GamePeerConnectionOpenEvent} game-peer-connection-open - Both DataChannels open and ready
- * @fires {GamePeerConnectionCloseEvent} game-peer-connection-close - DataChannel closed, the peer left the room, or the handshake timed out
+ * @fires {GamePeerConnectionCloseEvent} game-peer-connection-close - DataChannel closed, the peer left the room, the handshake timed out, or the peer stopped answering heartbeats
  * @fires {GamePeerConnectionMessageEvent} game-peer-connection-message - Message received from peer
  * @fires {GamePeerConnectionIceEvent} game-peer-connection-ice - ICE connection state changed, or "no-servers" when the lobby never returned STUN/TURN configuration
  * @cssState idle - No connection in progress
@@ -34,6 +34,8 @@ const LATENCY_INTERVAL = 2000;
  * @attr {number} [ice-timeout=2000] - Milliseconds to wait for each ICE server reply from the lobby
  * @attr {number} [ice-attempts=3] - How many times to ask the lobby for ICE servers before giving up
  * @attr {number} [connect-timeout=20000] - Milliseconds before an incomplete handshake is abandoned; 0 waits for ever
+ * @attr {number} [heartbeat-interval=2000] - Milliseconds between heartbeats to the peer; also the latency sample rate
+ * @attr {number} [heartbeat-timeout=10000] - Milliseconds of silence from the peer before the connection is reported lost; 0 never gives up
  */
 export default class GamePeerConnection extends GameComponent {
   static template = null;
@@ -46,6 +48,8 @@ export default class GamePeerConnection extends GameComponent {
     "ice-timeout": { type: "long", default: 2000 },
     "ice-attempts": { type: "long", default: 3 },
     "connect-timeout": { type: "long", default: 20000 },
+    "heartbeat-interval": { type: "long", default: 2000 },
+    "heartbeat-timeout": { type: "long", default: 10000 },
   };
 
   static define(tag = "game-peer-connection", registry = customElements) {
@@ -58,7 +62,8 @@ export default class GamePeerConnection extends GameComponent {
   #reliableChannel = null;
   #unreliableChannel = null;
   #lobby = null;
-  #latencyTimer = null;
+  #heartbeatTimer = null;
+  #lastHeard = 0;
   #connectTimer = null;
   #pendingCandidates = [];
   #watching = false;
@@ -405,7 +410,7 @@ export default class GamePeerConnection extends GameComponent {
         }
         this.#opened = false;
         this.#setState("disconnected");
-        this.#stopLatencyPolling();
+        this.#stopHeartbeat();
         this.dispatchEvent(
           new GamePeerConnectionCloseEvent(this.#peerId, "unreliable-closed"),
         );
@@ -416,17 +421,21 @@ export default class GamePeerConnection extends GameComponent {
     channel.addEventListener(
       "message",
       (e) => {
+        this.#lastHeard = performance.now();
         let data = e.data;
         try {
           data = JSON.parse(data);
         } catch {
           /* raw string */
         }
-        // Internal ready handshake — not exposed as a message event
-        if (data && typeof data === "object" && data.__ready) {
-          this.#remoteReady = true;
-          this.#checkBothReady();
-          return;
+        // Internal ready handshake and heartbeat — not exposed as message events
+        if (data && typeof data === "object") {
+          if (data.__ping) return;
+          if (data.__ready) {
+            this.#remoteReady = true;
+            this.#checkBothReady();
+            return;
+          }
         }
         this.dispatchEvent(
           new GamePeerConnectionMessageEvent(this.#peerId, role, data),
@@ -443,39 +452,59 @@ export default class GamePeerConnection extends GameComponent {
     this.#connectTimer = null;
     this.#setState("connected");
     this.dispatchEvent(new GamePeerConnectionOpenEvent(this.#peerId));
-    this.#startLatencyPolling();
+    this.#startHeartbeat();
     if (this.autoReady) this.ready();
     else if (this.#localReady) this.send({ __ready: true });
   }
 
-  #startLatencyPolling() {
-    this.#stopLatencyPolling();
-    const sample = async () => {
+  /**
+   * Send a heartbeat on the reliable channel every `heartbeat-interval`,
+   * sample the ICE round-trip time alongside it, and report the peer lost
+   * once nothing has arrived for `heartbeat-timeout`. A tab that is killed
+   * or loses its network never closes its DataChannels, and ICE can take
+   * half a minute to notice; without this the game waits for ever.
+   */
+  #startHeartbeat() {
+    this.#stopHeartbeat();
+    this.#lastHeard = performance.now();
+    const beat = () => {
       if (!this.#pc || this.#pc.connectionState === "closed") return;
-      try {
-        const stats = await this.#pc.getStats();
-        for (const report of stats.values()) {
-          if (
-            report.type === "candidate-pair" &&
-            report.state === "succeeded"
-          ) {
-            const rtt = Math.round((report.currentRoundTripTime ?? 0) * 1000);
-            this.#latency = rtt;
-            this.#stat("latency", rtt);
-            break;
-          }
-        }
-      } catch {
-        /* ignore */
+      if (
+        this.heartbeatTimeout &&
+        performance.now() - this.#lastHeard > this.heartbeatTimeout
+      ) {
+        this.#lost("lost");
+        return;
       }
+      this.send(PING);
+      this.#sampleLatency();
     };
-    sample();
-    this.#latencyTimer = setInterval(sample, LATENCY_INTERVAL);
+    this.#sampleLatency();
+    this.#heartbeatTimer = setInterval(
+      beat,
+      Math.max(1, this.heartbeatInterval),
+    );
   }
 
-  #stopLatencyPolling() {
-    clearInterval(this.#latencyTimer);
-    this.#latencyTimer = null;
+  async #sampleLatency() {
+    try {
+      const stats = await this.#pc.getStats();
+      for (const report of stats.values()) {
+        if (report.type === "candidate-pair" && report.state === "succeeded") {
+          const rtt = Math.round((report.currentRoundTripTime ?? 0) * 1000);
+          this.#latency = rtt;
+          this.#stat("latency", rtt);
+          break;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  #stopHeartbeat() {
+    clearInterval(this.#heartbeatTimer);
+    this.#heartbeatTimer = null;
   }
 
   #lost(reason) {
@@ -486,7 +515,7 @@ export default class GamePeerConnection extends GameComponent {
   }
 
   #teardown() {
-    this.#stopLatencyPolling();
+    this.#stopHeartbeat();
     clearTimeout(this.#connectTimer);
     this.#connectTimer = null;
     this.#connAbort?.abort();

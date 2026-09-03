@@ -369,6 +369,104 @@ describe("GamePeerConnection", () => {
     assert.equal(event.peerId, "player-b");
   });
 
+  async function openConnection(match, ctx, shell) {
+    ctx.playerId.set("player-a");
+    shell.start();
+    await tick();
+    ctx.startSignalling.set({
+      players: [{ id: "player-a" }, { id: "player-b" }],
+      code: null,
+    });
+    await tick();
+    await tick();
+    await tick();
+    const reliable = lastPc.channels.find((c) => c.label === "reliable");
+    const unreliable = lastPc.channels.find((c) => c.label === "unreliable");
+    reliable.open();
+    unreliable.open();
+    return reliable;
+  }
+
+  it("sends a heartbeat on the reliable channel every heartbeat-interval", async () => {
+    const ctx = makeLobbyContext();
+    const { shell, match } = await setup(ctx);
+    match.setAttribute("heartbeat-interval", "5");
+    const reliable = await openConnection(match, ctx, shell);
+    await wait(20);
+    const pings = reliable.sent.filter(
+      (s) => JSON.parse(s).__ping === true,
+    );
+    assert.ok(pings.length >= 2, `expected pings, got ${reliable.sent}`);
+  });
+
+  it("never exposes a heartbeat as a message event", async () => {
+    const ctx = makeLobbyContext();
+    const { shell, match } = await setup(ctx);
+    const reliable = await openConnection(match, ctx, shell);
+    const events = [];
+    match.addEventListener("game-peer-connection-message", (e) =>
+      events.push(e),
+    );
+    reliable.dispatchEvent(
+      new MessageEvent("message", { data: JSON.stringify({ __ping: true }) }),
+    );
+    assert.equal(events.length, 0);
+  });
+
+  it("drops the connection with reason 'lost' when the peer falls silent", async () => {
+    const ctx = makeLobbyContext();
+    const { shell, match } = await setup(ctx);
+    match.setAttribute("heartbeat-interval", "5");
+    match.setAttribute("heartbeat-timeout", "30");
+    await openConnection(match, ctx, shell);
+    const events = [];
+    match.addEventListener("game-peer-connection-close", (e) =>
+      events.push(e),
+    );
+    await wait(60);
+    assert.equal(events.length, 1);
+    assert.equal(events[0].peerId, "player-b");
+    assert.equal(events[0].reason, "lost");
+    assert.ok(match.matches(":state(disconnected)"));
+    assert.equal(match.peerId, null);
+  });
+
+  it("keeps the connection while the peer keeps talking", async () => {
+    const ctx = makeLobbyContext();
+    const { shell, match } = await setup(ctx);
+    match.setAttribute("heartbeat-interval", "5");
+    match.setAttribute("heartbeat-timeout", "30");
+    const reliable = await openConnection(match, ctx, shell);
+    const events = [];
+    match.addEventListener("game-peer-connection-close", (e) =>
+      events.push(e),
+    );
+    const talk = setInterval(() => {
+      reliable.dispatchEvent(
+        new MessageEvent("message", { data: JSON.stringify({ __ping: true }) }),
+      );
+    }, 10);
+    await wait(60);
+    clearInterval(talk);
+    assert.equal(events.length, 0);
+    assert.ok(match.connected);
+  });
+
+  it("heartbeat-timeout='0' never gives up on a silent peer", async () => {
+    const ctx = makeLobbyContext();
+    const { shell, match } = await setup(ctx);
+    match.setAttribute("heartbeat-interval", "5");
+    match.setAttribute("heartbeat-timeout", "0");
+    await openConnection(match, ctx, shell);
+    const events = [];
+    match.addEventListener("game-peer-connection-close", (e) =>
+      events.push(e),
+    );
+    await wait(40);
+    assert.equal(events.length, 0);
+    assert.ok(match.connected);
+  });
+
   it("fires GamePeerConnectionMessageEvent on reliable channel message", async () => {
     const ctx = makeLobbyContext();
     const { shell, match } = await setup(ctx);
