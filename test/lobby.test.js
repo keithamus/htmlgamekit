@@ -812,6 +812,42 @@ describe("GameLobby", () => {
       assert.notEqual(lastWs, ws, "a new WebSocket was opened");
       assert.include(lastWs.url, "player_id=p1");
     });
+
+    it("joinQueue after a handoff reconnects and queues once connected", async () => {
+      const lobby = await signalled();
+      const ws = lastWs;
+      lobby.handoff();
+      lobby.joinQueue(["red"]);
+      await tick();
+      assert.notEqual(lastWs, ws, "a new WebSocket was opened");
+      assert.include(lastWs.url, "player_id=p1");
+      lastWs.serverSend({ type: "connected", player_id: "p1" });
+      assert.deepEqual(lastWs.sent.at(-1), {
+        type: "join_queue",
+        preferences: ["red"],
+      });
+    });
+
+    it("createRoom after a handoff reconnects and creates once connected", async () => {
+      const lobby = await signalled();
+      const ws = lastWs;
+      lobby.handoff();
+      lobby.createRoom();
+      await tick();
+      assert.notEqual(lastWs, ws, "a new WebSocket was opened");
+      assert.equal(lastWs.sent.length, 0, "waits for the server hello");
+      lastWs.serverSend({ type: "connected", player_id: "p1" });
+      assert.deepEqual(lastWs.sent, [{ type: "create_room" }]);
+    });
+
+    it("joinRoom after a handoff reconnects and joins once connected", async () => {
+      const lobby = await signalled();
+      lobby.handoff();
+      lobby.joinRoom("XYZW");
+      await tick();
+      lastWs.serverSend({ type: "connected", player_id: "p1" });
+      assert.deepEqual(lastWs.sent, [{ type: "join_room", code: "XYZW" }]);
+    });
   });
 
   describe("commands", () => {

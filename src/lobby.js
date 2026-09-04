@@ -69,7 +69,7 @@ export default class GameLobby extends GameComponent {
   #playerCount = 0;
   #queuePrefs = null;
   #matchToken = null;
-  #pendingReport = null;
+  #pending = [];
   #stats = new Map();
 
   #sdpCallbacks = new Set();
@@ -128,18 +128,18 @@ export default class GameLobby extends GameComponent {
   }
 
   /**
-   * Create a private room.
+   * Create a private room. After a handoff this reconnects first.
    */
   createRoom() {
-    this.#send({ type: "CreateRoom" });
+    this.#sendOrRevive({ type: "CreateRoom" });
   }
 
   /**
-   * Join a room by code.
+   * Join a room by code. After a handoff this reconnects first.
    * @param {string} code
    */
   joinRoom(code) {
-    this.#send({ type: "JoinRoom", code });
+    this.#sendOrRevive({ type: "JoinRoom", code });
   }
 
   /**
@@ -175,7 +175,8 @@ export default class GameLobby extends GameComponent {
    */
   joinQueue(preferences = []) {
     this.#queuePrefs = preferences;
-    this.#send({ type: "JoinQueue", preferences });
+    if (this.#states.has("handed-off")) this.#connect();
+    else this.#send({ type: "JoinQueue", preferences });
   }
 
   /**
@@ -234,8 +235,20 @@ export default class GameLobby extends GameComponent {
       this.#send(msg);
       return;
     }
-    this.#pendingReport = msg;
+    this.#pending.push(msg);
     if (!this.#ws) this.#connect();
+  }
+
+  /**
+   * Send now, or after a handoff reconnect first and send once the server
+   * has said hello. Outside those two cases behaves like a plain send.
+   */
+  #sendOrRevive(msg) {
+    if (this.#ws?.readyState === WebSocket.OPEN) this.#send(msg);
+    else if (this.#states.has("handed-off") || this.#pending.length) {
+      this.#pending.push(msg);
+      if (!this.#ws) this.#connect();
+    } else this.#send(msg);
   }
 
   #onCommand(e) {
@@ -307,10 +320,7 @@ export default class GameLobby extends GameComponent {
       this.#setState("connected");
       this.#stat("player-id", msg.player_id);
       this.dispatchEvent(new GameLobbyConnectedEvent(msg.player_id));
-      if (this.#pendingReport) {
-        this.#send(this.#pendingReport);
-        this.#pendingReport = null;
-      }
+      for (const queued of this.#pending.splice(0)) this.#send(queued);
       if (this.#queuePrefs) this.joinQueue(this.#queuePrefs);
     } else if (type === "room_created" || type === "room_joined") {
       this.#setState("in-room");

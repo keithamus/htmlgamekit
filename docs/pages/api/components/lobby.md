@@ -91,9 +91,12 @@ quitting reconnects with the same identity instead.
 Release the signalling socket once the peer connection is up. Sends
 <code>handoff</code> so the server drops this player from the room without
 telling the others, then closes the WebSocket and moves to
-<code>:state(handed-off)</code>. No reconnect is scheduled. Called by
-<code>&lt;game-peer-connection&gt;</code> once both peers have finished
-ICE gathering; ignored unless the lobby is in <code>signalling</code>.
+<code>:state(handed-off)</code>. No reconnect is scheduled: the next
+<code>createRoom()</code>, <code>joinRoom()</code>, <code>joinQueue()</code>,
+<code>reportResult()</code> or shell quit reconnects with the same player
+ID and carries on. Called by <code>&lt;game-peer-connection&gt;</code> once
+both peers have finished ICE gathering; ignored unless the lobby is in
+<code>signalling</code>.
 </dd>
 
 <dt><span class="badge method">.createRoom()</span></dt>
