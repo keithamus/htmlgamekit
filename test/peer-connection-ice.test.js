@@ -79,6 +79,7 @@ function makeLobby(reply) {
     relaySdp: () => {},
     relayIce: () => {},
     reportResult: () => {},
+    handoff: () => {},
     onSdp: () => {},
     offSdp: () => {},
     onIceCandidate: () => {},

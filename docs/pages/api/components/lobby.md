@@ -80,9 +80,20 @@ Leave the current private room. The signalling protocol has no leave
 message, so this closes the WebSocket and reconnects with a fresh player
 identity — the server sees the player leave, and the room code and player
 count stats are cleared. Called automatically when the shell quits
-(<code>shell.quit()</code> / <code>--quit</code>) while in a room or match,
-so the other player receives <code>game-lobby-player</code> with action
-<code>"left"</code>.
+(<code>shell.quit()</code> / <code>--quit</code>) while in a room or during
+signalling, so the other player receives <code>game-lobby-player</code> with
+action <code>"left"</code>. After a handoff the room no longer exists, so
+quitting reconnects with the same identity instead.
+</dd>
+
+<dt><span class="badge method">.handoff()</span></dt>
+<dd>
+Release the signalling socket once the peer connection is up. Sends
+<code>handoff</code> so the server drops this player from the room without
+telling the others, then closes the WebSocket and moves to
+<code>:state(handed-off)</code>. No reconnect is scheduled. Called by
+<code>&lt;game-peer-connection&gt;</code> once both peers have finished
+ICE gathering; ignored unless the lobby is in <code>signalling</code>.
 </dd>
 
 <dt><span class="badge method">.createRoom()</span></dt>
@@ -133,7 +144,10 @@ Update this player's preference string. Other players in the room receive
 
 <dt><span class="badge method">.reportResult(opponent, outcome)</span></dt>
 <dd>
-Report a match outcome to the server for rating/ranking.
+Report a match outcome to the server for rating/ranking. Reconnects with
+the same player ID first if the socket was handed off, and sends the match
+token issued at <code>start_signalling</code>. Does nothing before a match
+has started signalling.
 
 **Parameters:**
 

@@ -48,6 +48,7 @@ class MockRTCPeerConnection extends EventTarget {
   localDescription = null;
   remoteDescription = null;
   iceConnectionState = "new";
+  iceGatheringState = "new";
   connectionState = "new";
   iceCandidates = [];
   channels = [];
@@ -107,6 +108,12 @@ class MockRTCPeerConnection extends EventTarget {
     this.iceConnectionState = state;
     this.dispatchEvent(new Event("iceconnectionstatechange"));
   }
+
+  // Test helper: simulate ICE gathering state change
+  setGatheringState(state) {
+    this.iceGatheringState = state;
+    this.dispatchEvent(new Event("icegatheringstatechange"));
+  }
 }
 
 let OriginalRTCPeerConnection;
@@ -118,6 +125,7 @@ function makeLobbyContext(overrides = {}) {
   const iceServerCallbacks = new Set();
   const startSignalling = new Signal.State(null);
   const playerId = new Signal.State("player-a");
+  const handoffs = [];
 
   return {
     relaySdp: overrides.relaySdp ?? (() => {}),
@@ -131,6 +139,7 @@ function makeLobbyContext(overrides = {}) {
         });
       }),
     reportResult: overrides.reportResult ?? (() => {}),
+    handoff: () => handoffs.push(1),
     onSdp: (cb) => sdpCallbacks.add(cb),
     offSdp: (cb) => sdpCallbacks.delete(cb),
     onIceCandidate: (cb) => iceCallbacks.add(cb),
@@ -143,6 +152,7 @@ function makeLobbyContext(overrides = {}) {
     _sdpCallbacks: sdpCallbacks,
     _iceCallbacks: iceCallbacks,
     _iceServerCallbacks: iceServerCallbacks,
+    _handoffs: handoffs,
   };
 }
 
@@ -671,7 +681,7 @@ describe("GamePeerConnection", () => {
     assert.ok(match.matches(":state(idle)"));
   });
 
-  it("drops the connection with reason 'left' when the peer leaves the room", async () => {
+  it("ignores the lobby saying the peer left once the channels are open", async () => {
     const ctx = makeLobbyContext();
     const { shell, match } = await setup(ctx);
     ctx.playerId.set("player-a");
@@ -693,11 +703,32 @@ describe("GamePeerConnection", () => {
     shell.dispatchEvent(new GameLobbyPlayerEvent("left", { id: "player-c" }));
     assert.equal(events.length, 0, "ignores other players");
     shell.dispatchEvent(new GameLobbyPlayerEvent("left", { id: "player-b" }));
+    assert.equal(events.length, 0, "the lobby is not load-bearing once connected");
+    assert.ok(match.matches(":state(connected)"));
+    assert.ok(match.matches(":state(ready)"));
+  });
+
+  it("reports the peer lost when the lobby says they left before the channels opened", async () => {
+    const ctx = makeLobbyContext();
+    const { shell, match } = await setup(ctx);
+    ctx.playerId.set("player-a");
+    shell.start();
+    await tick();
+    ctx.startSignalling.set({
+      players: [{ id: "player-a" }, { id: "player-b" }],
+      code: null,
+    });
+    await tick();
+    await tick();
+    await tick();
+
+    const events = [];
+    match.addEventListener("game-peer-connection-close", (e) => events.push(e));
+    shell.dispatchEvent(new GameLobbyPlayerEvent("left", { id: "player-b" }));
     assert.equal(events.length, 1);
     assert.equal(events[0].peerId, "player-b");
     assert.equal(events[0].reason, "left");
     assert.ok(match.matches(":state(disconnected)"));
-    assert.notOk(match.matches(":state(ready)"));
     assert.equal(match.peerId, null);
     assert.equal(lastPc.connectionState, "closed");
     await tick();
@@ -972,6 +1003,88 @@ describe("GamePeerConnection", () => {
     reliable.open();
     unreliable.open();
     assert.deepEqual(JSON.parse(reliable.sent.at(-1)), { __ready: true });
+  });
+
+  describe("handoff", () => {
+    async function connected() {
+      const ctx = makeLobbyContext();
+      const { shell, match } = await setup(ctx);
+      ctx.playerId.set("player-a");
+      shell.start();
+      await tick();
+      ctx.startSignalling.set({
+        players: [{ id: "player-a" }, { id: "player-b" }],
+        code: null,
+      });
+      await tick();
+      await tick();
+      await tick();
+      const [reliable, unreliable] = lastPc.channels;
+      reliable.open();
+      unreliable.open();
+      return { ctx, match, reliable };
+    }
+    const sentHandoff = (reliable) =>
+      reliable.sent.some((m) => JSON.parse(m).__handoff === true);
+    const peerHandoff = (reliable) =>
+      reliable.dispatchEvent(
+        new MessageEvent("message", {
+          data: JSON.stringify({ __handoff: true }),
+        }),
+      );
+
+    it("sends __handoff only once ICE gathering has completed", async () => {
+      const { reliable } = await connected();
+      assert.notOk(sentHandoff(reliable), "still gathering candidates");
+      lastPc.setGatheringState("complete");
+      assert.ok(sentHandoff(reliable));
+      assert.equal(
+        reliable.sent.filter((m) => JSON.parse(m).__handoff).length,
+        1,
+      );
+    });
+
+    it("sends __handoff on open when gathering completed first", async () => {
+      const ctx = makeLobbyContext();
+      const { shell } = await setup(ctx);
+      ctx.playerId.set("player-a");
+      shell.start();
+      await tick();
+      ctx.startSignalling.set({
+        players: [{ id: "player-a" }, { id: "player-b" }],
+        code: null,
+      });
+      await tick();
+      await tick();
+      await tick();
+      lastPc.setGatheringState("complete");
+      const [reliable, unreliable] = lastPc.channels;
+      reliable.open();
+      assert.notOk(sentHandoff(reliable), "needs both channels");
+      unreliable.open();
+      assert.ok(sentHandoff(reliable));
+    });
+
+    it("hands the lobby off once both sides have said so", async () => {
+      const { ctx, match, reliable } = await connected();
+      const messages = [];
+      match.addEventListener("game-peer-connection-message", (e) =>
+        messages.push(e),
+      );
+      peerHandoff(reliable);
+      assert.equal(messages.length, 0, "__handoff is internal");
+      assert.equal(ctx._handoffs.length, 0, "waits for local gathering");
+      lastPc.setGatheringState("complete");
+      assert.equal(ctx._handoffs.length, 1);
+    });
+
+    it("hands the lobby off when the peer answers after us", async () => {
+      const { ctx, reliable } = await connected();
+      lastPc.setGatheringState("complete");
+      assert.equal(ctx._handoffs.length, 0);
+      peerHandoff(reliable);
+      assert.equal(ctx._handoffs.length, 1);
+    });
   });
 
   it("republishes its stats when the shell wipes them on start", async () => {

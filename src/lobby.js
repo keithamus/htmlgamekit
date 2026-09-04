@@ -26,6 +26,11 @@ const DEFAULT_URL = "https://signalling.htmlgamekit.dev";
  * `--leave-queue`, `--lobby-ready`, `--lobby-unready` or `--set-preference`.
  * `--join-room`, `--join-queue` and `--set-preference` read the button `value`.
  *
+ * Once `<game-peer-connection>` has a working DataChannel it calls `handoff()`:
+ * the socket closes and the server forgets the room, so play needs no
+ * server at all. `reportResult()` reconnects on demand with the match token
+ * issued at `start_signalling`.
+ *
  * @summary WebSocket lobby signalling component
  * @fires {GameLobbyConnectedEvent} game-lobby-connected - Connected and assigned a player ID
  * @fires {GameLobbyRoomEvent} game-lobby-room - Room created or joined
@@ -39,6 +44,7 @@ const DEFAULT_URL = "https://signalling.htmlgamekit.dev";
  * @cssState in-room - In a room, waiting for ready
  * @cssState in-queue - In matchmaking queue
  * @cssState signalling - WebRTC signalling in progress
+ * @cssState handed-off - Peers connected, socket released until a result is reported
  * @cssState disconnected - WebSocket closed
  * @attr {boolean} [auto-ready] - Automatically call ready() when a queue match is found
  */
@@ -62,6 +68,8 @@ export default class GameLobby extends GameComponent {
   #reconnectTimer = null;
   #playerCount = 0;
   #queuePrefs = null;
+  #matchToken = null;
+  #pendingReport = null;
   #stats = new Map();
 
   #sdpCallbacks = new Set();
@@ -84,7 +92,8 @@ export default class GameLobby extends GameComponent {
       relaySdp: this.#relaySdp.bind(this),
       relayIce: this.#relayIce.bind(this),
       requestIceServers: this.#requestIceServers.bind(this),
-      reportResult: this.#reportResult.bind(this),
+      handoff: this.handoff.bind(this),
+      reportResult: this.reportResult.bind(this),
       onSdp: (cb) => this.#sdpCallbacks.add(cb),
       offSdp: (cb) => this.#sdpCallbacks.delete(cb),
       onIceCandidate: (cb) => this.#iceCallbacks.add(cb),
@@ -102,6 +111,8 @@ export default class GameLobby extends GameComponent {
       (e) => {
         if (e.action === "setup") this.#republishStats();
         else if (e.action === "quit" && this.#inRoom()) this.leaveRoom();
+        else if (e.action === "quit" && this.#states.has("handed-off"))
+          this.#connect();
       },
       { signal: this.signal },
     );
@@ -190,12 +201,41 @@ export default class GameLobby extends GameComponent {
   }
 
   /**
-   * Report a match result.
+   * Release the signalling socket once the peer connection is up. The server
+   * drops this player from the room without telling the others, and closes
+   * the room when the last player hands off. Called by
+   * `<game-peer-connection>`; only valid during signalling.
+   */
+  handoff() {
+    if (!this.#states.has("signalling")) return;
+    this.#send({ type: "Handoff" });
+    this.#disconnect();
+    this.#playerCount = 0;
+    this.#stat("player-count", 0);
+    this.startSignalling.set(null);
+    this.#setState("handed-off");
+  }
+
+  /**
+   * Report a match result. Reconnects first if the socket was handed off;
+   * the report carries the match token from `start_signalling`.
    * @param {string} opponent
    * @param {"win"|"loss"|"draw"} outcome
    */
   reportResult(opponent, outcome) {
-    this.#reportResult(opponent, outcome);
+    if (!this.#matchToken) return;
+    const msg = {
+      type: "ReportResult",
+      token: this.#matchToken,
+      opponent,
+      outcome,
+    };
+    if (this.#ws?.readyState === WebSocket.OPEN) {
+      this.#send(msg);
+      return;
+    }
+    this.#pendingReport = msg;
+    if (!this.#ws) this.#connect();
   }
 
   #onCommand(e) {
@@ -267,6 +307,10 @@ export default class GameLobby extends GameComponent {
       this.#setState("connected");
       this.#stat("player-id", msg.player_id);
       this.dispatchEvent(new GameLobbyConnectedEvent(msg.player_id));
+      if (this.#pendingReport) {
+        this.#send(this.#pendingReport);
+        this.#pendingReport = null;
+      }
       if (this.#queuePrefs) this.joinQueue(this.#queuePrefs);
     } else if (type === "room_created" || type === "room_joined") {
       this.#setState("in-room");
@@ -314,6 +358,7 @@ export default class GameLobby extends GameComponent {
       else this.#setState("connected");
     } else if (type === "start_signalling") {
       this.#queuePrefs = null;
+      this.#matchToken = msg.token ?? null;
       this.#setState("signalling");
       const payload = { players: msg.players ?? [], code: msg.code ?? null };
       this.startSignalling.set(payload);
@@ -355,6 +400,7 @@ export default class GameLobby extends GameComponent {
       "in-room",
       "in-queue",
       "signalling",
+      "handed-off",
       "disconnected",
     ]) {
       this.#states.delete(s);
@@ -398,9 +444,5 @@ export default class GameLobby extends GameComponent {
 
   #requestIceServers() {
     this.#send({ type: "RequestIceServers" });
-  }
-
-  #reportResult(opponent, outcome) {
-    this.#send({ type: "ReportResult", opponent, outcome });
   }
 }

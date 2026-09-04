@@ -21,7 +21,7 @@ const PING = JSON.stringify({ __ping: true });
  *
  * @summary WebRTC DataChannel peer connection component
  * @fires {GamePeerConnectionOpenEvent} game-peer-connection-open - Both DataChannels open and ready
- * @fires {GamePeerConnectionCloseEvent} game-peer-connection-close - DataChannel closed, the peer left the room, the handshake timed out, or the peer stopped answering heartbeats
+ * @fires {GamePeerConnectionCloseEvent} game-peer-connection-close - DataChannel closed, the peer left the room before the channels opened, the handshake timed out, or the peer stopped answering heartbeats
  * @fires {GamePeerConnectionMessageEvent} game-peer-connection-message - Message received from peer
  * @fires {GamePeerConnectionIceEvent} game-peer-connection-ice - ICE connection state changed, or "no-servers" when the lobby never returned STUN/TURN configuration
  * @cssState idle - No connection in progress
@@ -71,6 +71,8 @@ export default class GamePeerConnection extends GameComponent {
   #latency = null;
   #localReady = false;
   #remoteReady = false;
+  #handoffSent = false;
+  #handoffReceived = false;
   #opened = false;
   #stats = new Map();
 
@@ -130,7 +132,11 @@ export default class GamePeerConnection extends GameComponent {
     this.shell?.addEventListener(
       "game-lobby-player",
       (e) => {
-        if (e.action === "left" && e.player.id === this.#peerId)
+        if (
+          e.action === "left" &&
+          e.player.id === this.#peerId &&
+          !this.connected
+        )
           this.#lost("left");
       },
       { signal: this.signal },
@@ -361,6 +367,10 @@ export default class GamePeerConnection extends GameComponent {
       { signal },
     );
 
+    pc.addEventListener("icegatheringstatechange", () => this.#tryHandoff(), {
+      signal,
+    });
+
     if (isOfferer) {
       // Offerer creates both DataChannels
       const reliable = pc.createDataChannel(this.reliableLabel, {
@@ -436,6 +446,11 @@ export default class GamePeerConnection extends GameComponent {
             this.#checkBothReady();
             return;
           }
+          if (data.__handoff) {
+            this.#handoffReceived = true;
+            this.#checkHandoff();
+            return;
+          }
         }
         this.dispatchEvent(
           new GamePeerConnectionMessageEvent(this.#peerId, role, data),
@@ -453,6 +468,7 @@ export default class GamePeerConnection extends GameComponent {
     this.#setState("connected");
     this.dispatchEvent(new GamePeerConnectionOpenEvent(this.#peerId));
     this.#startHeartbeat();
+    this.#tryHandoff();
     if (this.autoReady) this.ready();
     else if (this.#localReady) this.send({ __ready: true });
   }
@@ -537,6 +553,8 @@ export default class GamePeerConnection extends GameComponent {
     this.#latency = null;
     this.#localReady = false;
     this.#remoteReady = false;
+    this.#handoffSent = false;
+    this.#handoffReceived = false;
     this.#opened = false;
     this.#states.delete("ready");
     this.#setState("idle");
@@ -575,5 +593,24 @@ export default class GamePeerConnection extends GameComponent {
     this.#remoteReady = false;
     this.#states.delete("ready");
     this.dispatchEvent(new GameStartRequestEvent());
+  }
+
+  /**
+   * Tell the peer that this side needs the lobby no more: both DataChannels
+   * are open and every local ICE candidate has already been relayed. Once
+   * both sides have said so, neither can still need a candidate from the
+   * other, so the lobby socket can go.
+   */
+  #tryHandoff() {
+    if (this.#handoffSent || !this.connected) return;
+    if (this.#pc?.iceGatheringState !== "complete") return;
+    this.#handoffSent = true;
+    this.send({ __handoff: true });
+    this.#checkHandoff();
+  }
+
+  #checkHandoff() {
+    if (!this.#handoffSent || !this.#handoffReceived) return;
+    this.#lobby?.handoff();
   }
 }

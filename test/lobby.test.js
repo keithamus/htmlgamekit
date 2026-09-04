@@ -714,6 +714,106 @@ describe("GameLobby", () => {
     });
   });
 
+  describe("handoff", () => {
+    function signalled(attrs = "") {
+      setup(attrs);
+      return (async () => {
+        await tick();
+        await tick();
+        lastWs.serverSend({ type: "connected", player_id: "p1" });
+        lastWs.serverSend({
+          type: "start_signalling",
+          players: [{ id: "p1" }, { id: "p2" }],
+          match_id: "m1",
+          token: "tok-p1",
+        });
+        return document.querySelector("game-lobby");
+      })();
+    }
+
+    it("sends Handoff, closes the socket and enters :state(handed-off)", async () => {
+      const lobby = await signalled();
+      const ws = lastWs;
+      lobby.handoff();
+      assert.deepEqual(ws.sent.at(-1), { type: "handoff" });
+      assert.equal(ws.readyState, MockWebSocket.CLOSED);
+      assert.ok(lobby.matches(":state(handed-off)"));
+      assert.notOk(lobby.matches(":state(disconnected)"));
+      assert.isNull(lobby.startSignalling.get());
+    });
+
+    it("does not reconnect after a handoff even with the reconnect attribute", async function () {
+      this.timeout(5000);
+      const lobby = await signalled("reconnect");
+      const ws = lastWs;
+      lobby.handoff();
+      await new Promise((r) => setTimeout(r, 2500));
+      assert.equal(lastWs, ws, "no replacement socket");
+    });
+
+    it("ignores handoff outside signalling", async () => {
+      setup();
+      await tick();
+      await tick();
+      const lobby = document.querySelector("game-lobby");
+      lastWs.serverSend({ type: "connected", player_id: "p1" });
+      lobby.handoff();
+      assert.equal(lastWs.readyState, MockWebSocket.OPEN);
+      assert.ok(lobby.matches(":state(connected)"));
+    });
+
+    it("reportResult reconnects with the same player and sends the token", async () => {
+      const lobby = await signalled();
+      const ws = lastWs;
+      lobby.handoff();
+      lobby.reportResult("p2", "win");
+      await tick();
+      assert.notEqual(lastWs, ws, "a new WebSocket was opened");
+      assert.include(lastWs.url, "player_id=p1");
+      assert.equal(lastWs.sent.length, 0, "waits for the server hello");
+      lastWs.serverSend({ type: "connected", player_id: "p1" });
+      assert.deepEqual(lastWs.sent.at(-1), {
+        type: "report_result",
+        token: "tok-p1",
+        opponent: "p2",
+        outcome: "win",
+      });
+      assert.ok(lobby.matches(":state(connected)"));
+    });
+
+    it("reportResult sends straight away while the socket is open", async () => {
+      const lobby = await signalled();
+      lobby.reportResult("p2", "loss");
+      assert.deepEqual(lastWs.sent.at(-1), {
+        type: "report_result",
+        token: "tok-p1",
+        opponent: "p2",
+        outcome: "loss",
+      });
+    });
+
+    it("reportResult without a match token sends nothing", async () => {
+      setup();
+      await tick();
+      await tick();
+      const lobby = document.querySelector("game-lobby");
+      lastWs.serverSend({ type: "connected", player_id: "p1" });
+      lobby.reportResult("p2", "win");
+      assert.equal(lastWs.sent.length, 0);
+    });
+
+    it("reconnects with the same player when the shell quits after a handoff", async () => {
+      const lobby = await signalled();
+      const shell = document.querySelector("game-shell");
+      const ws = lastWs;
+      lobby.handoff();
+      shell.quit();
+      await tick();
+      assert.notEqual(lastWs, ws, "a new WebSocket was opened");
+      assert.include(lastWs.url, "player_id=p1");
+    });
+  });
+
   describe("commands", () => {
     const command = (name, value) => {
       const lobby = document.querySelector("game-lobby");

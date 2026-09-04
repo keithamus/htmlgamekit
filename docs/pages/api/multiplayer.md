@@ -110,7 +110,7 @@ The lobby pushes its state into shell stats on every transition, so
 
 | Stat             | Values                                                                              |
 | ---------------- | ----------------------------------------------------------------------------------- |
-| `lobby-state`    | `connecting` / `connected` / `in-room` / `in-queue` / `signalling` / `disconnected` |
+| `lobby-state`    | `connecting` / `connected` / `in-room` / `in-queue` / `signalling` / `handed-off` / `disconnected` |
 | `player-count`   | Number of players in the current room                                               |
 | `room-code`      | Room code string when in a private room                                             |
 | `queue-position` | Position in the matchmaking queue                                                   |
@@ -224,6 +224,21 @@ const iFirst = myId < peerId;
 
 Both peers reach the same conclusion independently.
 
+## Handoff
+
+Once both DataChannels are open and each side has finished gathering ICE
+candidates, the peers tell each other so over the reliable channel and
+`<game-peer-connection>` calls `lobby.handoff()`. The lobby sends `handoff`
+to the signalling server and closes its WebSocket; the server forgets the
+room. From here the game runs peer to peer with no server at all, so a
+signalling server restart mid-game changes nothing. The lobby sits in
+`handed-off` until a result is reported or the shell quits, either of which
+reconnects with the same player ID.
+
+Because the lobby socket is gone, the lobby cannot tell you the peer left.
+`<game-peer-connection>` already covers that with its heartbeat: a peer that
+stops answering for `heartbeat-timeout` fires `game-peer-connection-close`.
+
 ## Result Reporting
 
 After a match, report the outcome to the server (for rating/ranking):
@@ -232,10 +247,11 @@ After a match, report the outcome to the server (for rating/ranking):
 match.reportResult(peerId, "win"); // "win" | "loss" | "draw"
 ```
 
-This calls through to `lobby.reportResult()` which sends a `report_result`
-message to the signalling server. Confirmation and rating messages are
-informational and are not surfaced as events; listen for `game-lobby-error`
-if the report fails.
+This calls through to `lobby.reportResult()`, which reconnects if the socket
+was handed off and sends a `report_result` message carrying the match token
+the server issued at `start_signalling`. Tokens last 24 hours. Confirmation
+and rating messages are informational and are not surfaced as events; listen
+for `game-lobby-error` if the report fails.
 
 ## Disconnection
 

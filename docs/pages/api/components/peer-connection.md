@@ -190,13 +190,15 @@ shell.addEventListener("game-peer-connection-open", (e) => {
 <dt><span class="badge event">game-peer-connection-close</span></dt>
 <dd>
 Fires when the connection is lost: the reliable DataChannel closed, the
-lobby reported that the peer left the room (the signalling server notices a
-closed tab straight away, long before ICE times out), the handshake never
-completed within <code>connect-timeout</code>, or nothing arrived from the
-peer for <code>heartbeat-timeout</code>. Either way the element tears the
-connection down, moves to <code>:state(disconnected)</code> and drops any
-pending readiness. The unreliable channel closing on its own only fires the
-event.
+lobby reported that the peer left the room before the channels opened (the
+signalling server notices a closed tab straight away, long before ICE times
+out), the handshake never completed within <code>connect-timeout</code>, or
+nothing arrived from the peer for <code>heartbeat-timeout</code>. Once the
+channels are open the lobby is no longer consulted: the socket is handed
+off, and the heartbeat is what notices a vanished peer. Either way the
+element tears the connection down, moves to
+<code>:state(disconnected)</code> and drops any pending readiness. The
+unreliable channel closing on its own only fires the event.
 
 | Property | Type     | Description                                                                                              |
 | -------- | -------- | -------------------------------------------------------------------------------------------------------- |
