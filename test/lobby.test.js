@@ -572,6 +572,73 @@ describe("GameLobby", () => {
     });
   });
 
+  describe("queue intent", () => {
+    it("rejoins the queue when the socket reconnects mid-wait", async function () {
+      this.timeout(5000);
+      setup("reconnect");
+      await tick();
+      await tick();
+      const lobby = document.querySelector("game-lobby");
+      lastWs.serverSend({ type: "connected", player_id: "p1" });
+      lobby.joinQueue(["red"]);
+      lastWs.serverSend({ type: "queue_joined", position: 1 });
+      const firstWs = lastWs;
+      firstWs.close();
+      await new Promise((r) => setTimeout(r, 2500));
+      assert.notEqual(firstWs, lastWs);
+      lastWs.serverSend({ type: "connected", player_id: "p1" });
+      assert.deepEqual(lastWs.sent.at(-1), {
+        type: "join_queue",
+        preferences: ["red"],
+      });
+    });
+
+    it("rejoins the queue when a match is cancelled", async () => {
+      setup("auto-ready");
+      await tick();
+      await tick();
+      const lobby = document.querySelector("game-lobby");
+      lastWs.serverSend({ type: "connected", player_id: "p1" });
+      lobby.joinQueue(["red"]);
+      lastWs.serverSend({ type: "queue_joined", position: 1 });
+      lastWs.serverSend({
+        type: "match_found",
+        code: "ROOM1",
+        players: [{ id: "p1" }, { id: "p2" }],
+      });
+      assert.deepEqual(lastWs.sent.at(-1), { type: "ready" });
+      lastWs.serverSend({ type: "player_left", player_id: "p2" });
+      lastWs.serverSend({ type: "match_cancelled" });
+      assert.deepEqual(lastWs.sent.at(-1), {
+        type: "join_queue",
+        preferences: ["red"],
+      });
+    });
+
+    it("does not rejoin after leaveQueue() or once signalling starts", async () => {
+      setup();
+      await tick();
+      await tick();
+      const lobby = document.querySelector("game-lobby");
+      lastWs.serverSend({ type: "connected", player_id: "p1" });
+      lobby.joinQueue(["red"]);
+      lobby.leaveQueue();
+      lastWs.serverSend({ type: "match_cancelled" });
+      assert.deepEqual(lastWs.sent.at(-1), { type: "leave_queue" });
+      assert.ok(lobby.matches(":state(connected)"));
+
+      lobby.joinQueue(["red"]);
+      lastWs.serverSend({
+        type: "start_signalling",
+        players: [{ id: "p1" }, { id: "p2" }],
+        code: "ROOM1",
+      });
+      const sent = lastWs.sent.length;
+      lastWs.serverSend({ type: "connected", player_id: "p1" });
+      assert.equal(lastWs.sent.length, sent);
+    });
+  });
+
   describe("leaveRoom", () => {
     it("reconnects with a fresh player identity and clears the room", async () => {
       setup();

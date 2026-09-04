@@ -61,6 +61,7 @@ export default class GameLobby extends GameComponent {
   #states = null;
   #reconnectTimer = null;
   #playerCount = 0;
+  #queuePrefs = null;
   #stats = new Map();
 
   #sdpCallbacks = new Set();
@@ -134,6 +135,7 @@ export default class GameLobby extends GameComponent {
    * Leave the matchmaking queue.
    */
   leaveQueue() {
+    this.#queuePrefs = null;
     this.#send({ type: "LeaveQueue" });
     if (this.#states.has("in-queue")) this.#setState("connected");
   }
@@ -147,6 +149,7 @@ export default class GameLobby extends GameComponent {
     this.#disconnect();
     this.playerId.set(null);
     this.#playerCount = 0;
+    this.#queuePrefs = null;
     this.startSignalling.set(null);
     this.#stat("room-code", null);
     this.#stat("player-count", 0);
@@ -154,10 +157,13 @@ export default class GameLobby extends GameComponent {
   }
 
   /**
-   * Enter the matchmaking queue with optional preference strings.
+   * Enter the matchmaking queue with optional preference strings. The intent
+   * survives until a match starts signalling or `leaveQueue()` is called: a
+   * dropped socket or a cancelled match re-enters the queue on its own.
    * @param {string[]} [preferences]
    */
   joinQueue(preferences = []) {
+    this.#queuePrefs = preferences;
     this.#send({ type: "JoinQueue", preferences });
   }
 
@@ -261,6 +267,7 @@ export default class GameLobby extends GameComponent {
       this.#setState("connected");
       this.#stat("player-id", msg.player_id);
       this.dispatchEvent(new GameLobbyConnectedEvent(msg.player_id));
+      if (this.#queuePrefs) this.joinQueue(this.#queuePrefs);
     } else if (type === "room_created" || type === "room_joined") {
       this.#setState("in-room");
       this.#playerCount = msg.players?.length ?? 0;
@@ -300,7 +307,13 @@ export default class GameLobby extends GameComponent {
     } else if (type === "match_found") {
       this.dispatchEvent(new GameLobbyMatchEvent(msg.players ?? []));
       if (this.autoReady) this.ready();
+    } else if (type === "match_cancelled") {
+      this.#playerCount = 0;
+      this.#stat("player-count", 0);
+      if (this.#queuePrefs) this.joinQueue(this.#queuePrefs);
+      else this.#setState("connected");
     } else if (type === "start_signalling") {
+      this.#queuePrefs = null;
       this.#setState("signalling");
       const payload = { players: msg.players ?? [], code: msg.code ?? null };
       this.startSignalling.set(payload);
